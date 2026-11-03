@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>한진칼·대한항공 시총 비율</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@700;900&display=swap">
+<style>
+/* Layout: 단일 칼럼. 상단 시세 띠 → 비율 차트 → 계산기 → 조합표 → 타임라인. 파랑 = 2020 분쟁기, 주황 = 호반 국면 */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#14203A; --muted:#5A6476; --line:#D9DEE6; --soft:#E9EDF3;
+  --blue:#2E59CF; --blue-soft:#E6ECFA; --amber:#C9661A; --amber-soft:#FBEBDD; --good:#1F7A4D; --bad:#B42318;
+  --f-display:'Noto Serif KR','Apple SD Gothic Neo',serif;
+  --f-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --f-num:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1320; --surface:#141B2A; --ink:#E5E9F1; --muted:#9AA4B7; --line:#283247; --soft:#1B2436;
+    --blue:#86A6FF; --blue-soft:#1C2A4D; --amber:#F2A05C; --amber-soft:#3A2817; --good:#5CC48D; --bad:#F2877B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1320; --surface:#141B2A; --ink:#E5E9F1; --muted:#9AA4B7; --line:#283247; --soft:#1B2436;
+  --blue:#86A6FF; --blue-soft:#1C2A4D; --amber:#F2A05C; --amber-soft:#3A2817; --good:#5CC48D; --bad:#F2877B; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(28px,4.6vw,44px);line-height:1.2;letter-spacing:-0.01em}
+h2{font-size:21px;font-weight:700;line-height:1.35}
+p{margin:0}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px}
+header{display:flex;flex-direction:column;gap:12px}
+.lede{font-size:17px;max-width:68ch}
+.tape{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.tape div{padding:12px 14px;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line);min-width:0}
+.tape div:first-child{border-left:none}
+.tape .k{font-size:12px;color:var(--muted)}
+.tape .v{font-family:var(--f-num);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.tape .v.hot{color:var(--amber)}
+.asof{font-size:12.5px;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fact .big{font-family:var(--f-num);font-size:30px;font-weight:600;line-height:1.1}
+.fact.hot .big{color:var(--amber)} .fact.cool .big{color:var(--blue)}
+.fact .lbl{font-size:13px;color:var(--muted)}
+.chartbox{position:relative;height:380px;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.ctrl{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ctrl label{font-weight:600;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.ctrl input[type=range]{width:100%;accent-color:var(--amber)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+.chip:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.out div{background:var(--soft);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.out .k{font-size:12px;color:var(--muted)}
+.out .v{font-family:var(--f-num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.out .s{font-size:12px;color:var(--muted)}
+.out .big{grid-column:span 3;background:var(--ink);color:var(--bg)}
+.out .big .k,.out .big .s{color:var(--bg);opacity:.85}
+.out .big .v{font-size:34px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12.5px;color:var(--muted);font-weight:600;background:var(--soft)}
+td.hit{background:var(--amber-soft);color:var(--amber);font-weight:600}
+td.now{outline:2px solid var(--ink);outline-offset:-2px}
+tbody tr:last-child td{border-bottom:0}
+ul.dash{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+ul.dash li{padding-left:16px;position:relative}
+ul.dash li::before{content:"–";position:absolute;left:0;color:var(--muted)}
+.timeline{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.timeline div{padding:12px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:4px;min-width:0}
+.timeline div:first-child{border-left:none}
+.timeline .d{font-family:var(--f-num);font-weight:600;font-size:14px}
+.timeline .e{font-size:13px}
+.timeline .a{font-size:12px;color:var(--amber);font-weight:600}
+footer{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--muted)}
+.notice{border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+.notice b{color:var(--ink)}
+.warnbox{border:1px solid var(--amber);background:var(--amber-soft);border-radius:10px;padding:12px 14px;font-size:14px}
+td.l{text-align:left;white-space:normal;min-width:180px}
+@media (max-width:760px){
+  .tape{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tape div{border-left:none;border-top:1px solid var(--line)}
+  .tape div:nth-child(-n+2){border-top:none}
+  .facts,.calc{grid-template-columns:1fr}
+  .out{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .out .big{grid-column:span 2}
+  .timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .timeline div{border-left:none;border-top:1px solid var(--line)}
+  .chartbox{height:320px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Hanjin KAL vs Korean Air · 매일 장 마감 후 갱신</p>
+  <h1>한진칼은 대한항공의 몇 배까지 갈 수 있나</h1>
+  <p class="lede">지주회사 한진칼의 시가총액을 자회사 대한항공의 시가총액으로 나눈 비율만 본다. 경영권 분쟁이 붙을 때마다 이 비율이 어디까지 올랐는지, 그리고 지금 어디에 있는지 비교한다.</p>
+  <div class="tape" role="list">
+    <div role="listitem"><span class="k">한진칼 종가</span><span class="v hot" id="tHk">-</span></div>
+    <div role="listitem"><span class="k">대한항공 종가</span><span class="v" id="tKal">-</span></div>
+    <div role="listitem"><span class="k">한진칼 시총</span><span class="v" id="tHkCap">-</span></div>
+    <div role="listitem"><span class="k">대한항공 시총</span><span class="v" id="tKalCap">-</span></div>
+    <div role="listitem"><span class="k">시총 비율</span><span class="v hot" id="tRatio">-</span></div>
+  </div>
+  <p class="asof" id="asof">-</p>
+  <div class="notice" role="note"><b>참고용 자료이며 투자 조언이 아니다.</b><span>공시·보도와 과거 사례를 정리한 개인 분석이다. 특정 종목의 매수·매도를 권유하지 않으며, 숫자와 시나리오에는 작성자 가정이 섞여 있다. 투자 판단과 그 결과의 책임은 투자자 본인에게 있다.</span></div>
+</header>
+
+<section aria-labelledby="h-facts">
+  <h2 id="h-facts">분쟁 때마다 비율은 어디까지 갔나</h2>
+  <div class="facts">
+    <div class="fact cool"><span class="big">2.58배</span><span class="lbl">2020.4.20 · 3자 연합 분쟁 최고점</span><span class="small">한진칼 4.79조 vs 대한항공 1.85조. 당시 대한항공은 코로나로 주가가 크게 눌려 있었다.</span></div>
+    <div class="fact cool"><span class="big">1.61배</span><span class="lbl">2020.2.26 · 3자 연합 공격, 주총 한 달 전</span><span class="small">한진칼 3.55조 vs 대한항공 2.2조. 분쟁 초입에 이미 1.5배를 넘었다.</span></div>
+    <div class="fact hot"><span class="big">1.13배</span><span class="lbl">2025.6.2 · 호반 국면 고점</span><span class="small">한진칼 9.43조 vs 대한항공 8.34조. 이후 2026.5에는 0.78배까지 내려왔다.</span></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-chart">
+  <h2 id="h-chart">한진칼 ÷ 대한항공 시총 비율</h2>
+  <div class="panel">
+    <div class="chartbox"><canvas id="ratioChart" aria-label="한진칼 대 대한항공 시가총액 비율 추이"></canvas></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--amber)"></i>비율(점을 누르면 출처)</span>
+      <span><i class="sw" style="background:var(--blue-soft)"></i>KCGI·3자 연합 분쟁기</span>
+      <span><i class="sw" style="background:var(--amber-soft)"></i>호반 지분 확대기</span>
+    </div>
+    <p class="small muted" id="chartNote">1.0배 선 위는 지주회사 한진칼의 시총이 자회사 대한항공보다 큰 구간이다. 2026년 11월 이후 점은 매일 장 마감 뒤 자동으로 추가된다.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-calc">
+  <h2 id="h-calc">비율로 보는 한진칼 가격</h2>
+  <div class="panel">
+    <div class="calc">
+      <div class="ctrl">
+        <label for="kal">대한항공 주가 <span class="num" id="kalVal">-</span></label>
+        <input type="range" id="kal" min="15000" max="60000" step="5" value="27425">
+        <div class="chips" id="kalChips"></div>
+      </div>
+      <div class="ctrl">
+        <label for="ratio">시총 비율 <span class="num" id="ratioVal">-</span></label>
+        <input type="range" id="ratio" min="0.3" max="3" step="0.01" value="1.13">
+        <div class="chips" id="ratioChips">
+          <button type="button" class="chip" data-v="0.78">냉각 2026.5 · 0.78</button>
+          <button type="button" class="chip" data-v="0.91">호반 20% 2026.7 · 0.91</button>
+          <button type="button" class="chip" data-v="1.13">호반 국면 고점 · 1.13</button>
+          <button type="button" class="chip" data-v="1.61">2020 공격 초입 · 1.61</button>
+          <button type="button" class="chip" data-v="2.58">2020 분쟁 최고점 · 2.58</button>
+        </div>
+      </div>
+    </div>
+    <div class="out" aria-live="polite">
+      <div class="big"><span class="k">한진칼 가격</span><span class="v" id="oPrice">-</span><span class="s" id="oVs">-</span></div>
+      <div><span class="k">한진칼 시총</span><span class="v" id="oHk">-</span><span class="s">= 비율 × 대한항공 시총</span></div>
+      <div><span class="k">대한항공 시총</span><span class="v" id="oKal">-</span><span class="s" id="oKalS">-</span></div>
+      <div><span class="k">어느 국면과 비슷한가</span><span class="v" id="oCase" style="font-size:16px">-</span><span class="s">2020 최고점 2.58 · 2020 초입 1.61 · 호반 고점 1.13</span></div>
+    </div>
+    <p class="small muted">한진칼 가격 = 비율 × 대한항공 주가 × 대한항공 주식 수 ÷ 한진칼 주식 수(6,676만 주)</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-grid">
+  <h2 id="h-grid">대한항공 주가 × 시총 비율 조합표</h2>
+  <div class="tablewrap"><table><thead id="gridHead"></thead><tbody id="gridBody"></tbody></table></div>
+  <p class="small muted" id="gridNote">음영 = 최근 한진칼 종가 이상. 테두리 = 최근 종가에 가장 가까운 칸.</p>
+</section>
+
+<section aria-labelledby="h-read">
+  <h2 id="h-read">읽는 법</h2>
+  <div class="panel">
+    <ul class="dash">
+      <li><b>2020년 분쟁</b>에서는 비율이 1.61배(공격 초입)를 거쳐 2.58배(최고점)까지 갔다. 다만 같은 시기 대한항공은 코로나로 4년 만의 최저가였다. 비율의 상당 부분은 대한항공이 눌린 데서 나왔다.</li>
+      <li><b>호반 국면</b>에서는 2025년 6월 1.13배가 고점이었다. 산은 결정 같은 사건 없이도 2026년 5월 0.78배까지 되돌아왔다.</li>
+      <li><b>통합 대한항공</b>은 아시아나 합병(2026.12.16)과 통합 진에어(2027.3.17)로 국내 유일 대형 국적기가 된다. 비율이 같아도 대한항공이 오르면 한진칼도 같은 비율로 오른다.</li>
+      <li><b>표 대결이 공식화되면</b> 비율은 2020년 공격 초입(1.61배) 쪽으로 움직일 여지가 생긴다. 공식화의 신호는 호반의 보유목적 변경과 주주제안이다.</li>
+      <li><b>분쟁이 끝나면</b> 비율은 크게 되돌아온다. 2020년 12월 산은 증자 뒤 0.88배, 2022년 말 0.30배까지 내려갔다.</li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="h-lesson">
+  <h2 id="h-lesson">사건을 따라 사면 물릴 수 있다</h2>
+  <div class="warnbox">경영권 분쟁주는 뉴스가 나온 뒤 따라 사면 고점에 물리기 쉽다. 아래 세 사례 모두 분쟁이 끝나는 사건이 나온 날 주가가 갭으로 떨어졌고, 고점에서 55~65% 되돌아왔다.</div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>항목</th><th>SM(2023)</th><th>고려아연(2024)</th><th>한진칼(2020)</th></tr></thead>
+    <tbody>
+      <tr><td>분쟁 시작 → 고점</td><td class="l">약 4주</td><td class="l">약 12주</td><td class="l">약 11주(주총 후 4주)</td></tr>
+      <tr><td>고점을 만든 것</td><td class="l">경쟁 공개매수(15만 원)</td><td class="l">자사주 공개매수 후 유통 물량 감소</td><td class="l">주총에서 진 쪽의 추가 매집</td></tr>
+      <tr><td>분쟁을 끝낸 사건</td><td class="l">하이브 인수 포기 → 다음 날 −20% 이상</td><td class="l">공개매수 종료 · 지분 구도 고착</td><td class="l">산은 제3자배정 증자(2020.11)</td></tr>
+      <tr><td>고점 대비 되돌림</td><td class="l num">−55%</td><td class="l num">약 −65%</td><td class="l num">−62%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="panel">
+    <ul class="dash">
+      <li><b>발표를 보고 팔면 늦다.</b> 분쟁이 끝나는 사건은 당일 갭 하락으로 반영된다. 파는 시점은 종결 신호가 나오기 전이어야 한다.</li>
+      <li><b>고점은 분쟁이 시작되고 4~12주 뒤에 왔다.</b> 한진칼 2020은 정기주총 4주 뒤가 고점이었다. 같은 패턴이면 2027년 4월 말까지가 사례상 마지막 고점 구간이다.</li>
+      <li><b>공개매수·입찰 기간이 가장 안전한 매도 창이다.</b> 그 기간에는 제시 가격이 하단 역할을 한다. 기간이 끝나면 급락했다.</li>
+      <li><b>한진칼 2020 분쟁을 끝낸 것은 산은이었다.</b> 이번에도 결정권은 산은에 있다. 산은의 신호가 가장 먼저 볼 손절 기준이다.</li>
+    </ul>
+    <p class="small muted">출처: 뉴스핌(2024.10.23), 다음(2025.09.15), SBS Biz(2024.12.05), 인베스트조선(2023.03.07), 머니투데이(2020.01.31), 뉴시스(2022.11.11), 조세일보(2020.12.10)</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-time">
+  <h2 id="h-time">다음 액션 타임라인</h2>
+  <div class="timeline">
+    <div><span class="d">~12/1</span><span class="e">한진칼 최대주주 재공시</span><span class="a">호반 실제 지분 확인</span></div>
+    <div><span class="d">12/16~17</span><span class="e">대한항공·아시아나 합병</span><span class="a">산은 보유 명분 논쟁 시작</span></div>
+    <div><span class="d">12/31</span><span class="e">주주명부 기준일(통상)</span><span class="a">주총용 지분 매집 마감</span></div>
+    <div><span class="d">2월 중순</span><span class="e">보유목적 변경 · 주주제안 마감</span><span class="a">표 대결 확정 여부</span></div>
+    <div><span class="d">3/17 · 3월 말</span><span class="e">통합 진에어 출범 · 정기주총</span><span class="a">산은 표 방향 첫 공개</span></div>
+    <div><span class="d">4월~</span><span class="e">임시주총 · 산은 결정 위험 상승</span><span class="a">분쟁 프리미엄 소멸 위험</span></div>
+  </div>
+</section>
+
+<footer>
+  <p><b>자료.</b> 2020.2.26: 한국경제 「한진칼 사상 최고가 vs 대한항공 4년 최저가」. 2020.4.20: 한진칼 최고가 111,000원 기준 시총 4.79조, 대한항공 1.85조. 2018~2020 연말: companiesmarketcap.com(달러 기준이라 비율만 사용). 2021~2025 연말: stockanalysis.com. 2025.6.2·2026.5.11: CEO스코어데일리. 2026.7.10: iM증권 Issue Comment. 2026.11 이후: 매일 장 마감 뒤 공개 시세·보도에서 확인한 종가 × 상장 주식 수.</p>
+  <p>주식 수: 한진칼 66,762,279주. 대한항공 3.682억 주(아시아나 합병 신주 약 2,034만 주 상장 후 약 3.885억 주로 바뀜). 공시·보도 기반 참고 자료이며 투자 조언이나 매매 권유가 아니다. 시세는 공개 보도에서 확인한 종가로 자동 갱신되며 지연·오류가 있을 수 있다.</p>
+  <p>
+    <a href="https://www.hankyung.com/finance/article/2020022675821" target="_blank" rel="noopener">한국경제 2020.02.26</a> ·
+    <a href="https://m.ceoscoredaily.com/page/view/2026052211494727535" target="_blank" rel="noopener">CEO스코어데일리 2026.05</a> ·
+    <a href="https://stockanalysis.com/quote/krx/180640/market-cap/" target="_blank" rel="noopener">stockanalysis 한진칼</a> ·
+    <a href="https://stockanalysis.com/quote/krx/003490/market-cap/" target="_blank" rel="noopener">stockanalysis 대한항공</a> ·
+    <a href="https://companiesmarketcap.com/hanjin-kal/marketcap/" target="_blank" rel="noopener">companiesmarketcap 한진칼</a> ·
+    <a href="https://companiesmarketcap.com/korean-air-lines/marketcap/" target="_blank" rel="noopener">companiesmarketcap 대한항공</a>
+  </p>
+</footer>
+</div>
+
+<script>
+// 매일 장 마감 후 예약 작업이 아래 배열 끝(ROWS_END 표시 바로 앞)에 한 줄씩 추가한다.
+// d: 거래일, hk/kal: 종가(원), hkSh/kalSh: 상장 주식 수, src: 시세 출처
+const LIVE=[
+{d:"2026-11-02",hk:134800,kal:27425,hkSh:66762279,kalSh:368220000,src:"한진칼 종가(한국경제), 대한항공 장중가(톱스타뉴스)"},
+/*ROWS_END*/
+];
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  const HIST=[
+    {x:2018.99,d:'2018.12.28',r:0.92,hk:null,kal:null,src:'companiesmarketcap 연말(달러)',ev:'KCGI 2대주주 진입 직후'},
+    {x:2019.99,d:'2019.12.30',r:0.88,hk:null,kal:null,src:'companiesmarketcap 연말(달러)',ev:'조현아·KCGI 연대 직전'},
+    {x:2020.15,d:'2020.02.26',r:1.61,hk:3.55,kal:2.2,src:'한국경제 2020.02.26',ev:'3자 연합 공격 · 주총 한 달 전'},
+    {x:2020.30,d:'2020.04.20',r:2.58,hk:4.79,kal:1.85,src:'한진칼 최고가 111,000원 기준',ev:'2020 분쟁 최고점'},
+    {x:2020.99,d:'2020.12.30',r:0.88,hk:null,kal:null,src:'companiesmarketcap 연말(달러)',ev:'산은 증자로 분쟁 종결'},
+    {x:2021.99,d:'2021.12.30',r:0.40,hk:4.12,kal:10.25,src:'stockanalysis 연말',ev:'분쟁 없음'},
+    {x:2022.99,d:'2022.12.29',r:0.30,hk:2.52,kal:8.48,src:'stockanalysis 연말',ev:'호반 KCGI 지분 인수'},
+    {x:2023.99,d:'2023.12.28',r:0.55,hk:4.84,kal:8.83,src:'stockanalysis 연말',ev:'호반 팬오션 물량 인수'},
+    {x:2024.99,d:'2024.12.30',r:0.60,hk:5.01,kal:8.35,src:'stockanalysis 연말',ev:'호반 장내매수'},
+    {x:2025.42,d:'2025.06.02',r:1.13,hk:9.43,kal:8.34,src:'CEO스코어데일리',ev:'호반 국면 고점'},
+    {x:2025.99,d:'2025.12.30',r:0.99,hk:8.25,kal:8.33,src:'stockanalysis 연말',ev:'-'},
+    {x:2026.36,d:'2026.05.11',r:0.78,hk:7.40,kal:9.48,src:'CEO스코어데일리',ev:'냉각'},
+    {x:2026.52,d:'2026.07.10',r:0.91,hk:8.99,kal:9.85,src:'iM증권 Issue Comment',ev:'호반 20.15%'}
+  ];
+  const toX=s=>{const t=new Date(s+'T00:00:00+09:00');const y=t.getFullYear();const st=new Date(y,0,1),en=new Date(y+1,0,1);return y+(t-st)/(en-st);};
+  const rows=(typeof LIVE!=='undefined'?LIVE:[]).filter(r=>r&&r.d&&r.hk&&r.kal).sort((a,b)=>a.d<b.d?-1:1);
+  const LV=rows.map(r=>{const hc=r.hk*r.hkSh,kc=r.kal*r.kalSh;return {x:toX(r.d),d:r.d.replace(/-/g,'.'),r:+(hc/kc).toFixed(3),hk:hc/1e12,kal:kc/1e12,src:r.src,ev:'일별 종가'};});
+  const last=rows[rows.length-1];
+  const won=v=>Math.round(v).toLocaleString('ko-KR')+'원';
+  const jo=v=>(v/1e12).toFixed(2)+'조';
+  if(last){
+    const hc=last.hk*last.hkSh,kc=last.kal*last.kalSh;
+    document.getElementById('tHk').textContent=won(last.hk);
+    document.getElementById('tKal').textContent=won(last.kal);
+    document.getElementById('tHkCap').textContent=jo(hc);
+    document.getElementById('tKalCap').textContent=jo(kc);
+    document.getElementById('tRatio').textContent=(hc/kc).toFixed(2)+'배';
+    document.getElementById('asof').textContent='기준일 '+last.d+' · 출처 '+last.src;
+  }
+
+  // 차트
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const REF=[{y:1.0,t:'시총 역전 1.0배',left:true},{y:1.13,t:'호반 국면 고점 1.13배'},{y:1.61,t:'2020 공격 초입 1.61배'},{y:2.58,t:'2020 최고점 2.58배'}];
+  const BANDS=[{a:2018.87,b:2020.88,c:'--blue-soft',t:'KCGI·3자 연합'},{a:2022.2,b:2027.2,c:'--amber-soft',t:'호반 지분 확대'}];
+  const deco={id:'deco',beforeDatasetsDraw(c){const {ctx,chartArea:a,scales:{x,y}}=c;ctx.save();
+    BANDS.forEach(b=>{const x0=Math.max(x.getPixelForValue(b.a),a.left),x1=Math.min(x.getPixelForValue(b.b),a.right);ctx.globalAlpha=.7;ctx.fillStyle=css(b.c);ctx.fillRect(x0,a.top,x1-x0,a.bottom-a.top);ctx.globalAlpha=1;ctx.fillStyle=css('--muted');ctx.font='11px '+css('--f-body');ctx.fillText(b.t,x0+6,a.top+14);});
+    REF.forEach(r=>{const py=y.getPixelForValue(r.y);if(py<a.top||py>a.bottom)return;ctx.strokeStyle=css('--muted');ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.left,py);ctx.lineTo(a.right,py);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=css('--muted');ctx.font='11px '+css('--f-body');ctx.textAlign=r.left?'left':'right';ctx.fillText(r.t,r.left?Math.max(a.left+6,x.getPixelForValue(2021.15)):a.right-4,r.left?py+13:py-4);ctx.textAlign='left';});
+    ctx.restore();}};
+  const pts=HIST.concat(LV).map(p=>({x:p.x,y:p.r,p}));
+  const xmax=Math.max(2027.05,(LV.length?LV[LV.length-1].x:0)+0.1);
+  let chart=null;
+  if(window.Chart){
+    chart=new Chart(document.getElementById('ratioChart'),{type:'line',plugins:[deco],
+      data:{datasets:[{label:'시총 비율',data:pts,borderWidth:2,tension:0,pointRadius:c=>c.raw&&c.raw.p.ev==='일별 종가'?2:4,pointHoverRadius:7}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},parsing:false,interaction:{mode:'nearest',intersect:false},
+        scales:{x:{type:'linear',min:2018.7,max:xmax,ticks:{stepSize:1,callback:v=>Number.isInteger(v)?String(v):''},grid:{display:false}},
+                y:{beginAtZero:true,suggestedMax:2.8,ticks:{callback:v=>v+'배'}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:i=>i[0].raw.p.d+' · '+i[0].raw.p.ev,
+          label:i=>{const p=i.raw.p;const L=['시총 비율 '+i.raw.y.toFixed(2)+'배'];if(p.hk&&p.kal)L.push('한진칼 '+p.hk.toFixed(2)+'조 / 대한항공 '+p.kal.toFixed(2)+'조');L.push('출처: '+p.src);return L;}}}}}});
+  } else {
+    document.getElementById('chartNote').textContent='차트를 불러오지 못했다. 아래 계산기와 조합표는 그대로 작동한다.';
+  }
+  function paint(){if(!chart)return;const h=css('--amber'),m=css('--muted'),l=css('--line'),s=css('--surface');const d=chart.data.datasets[0];d.borderColor=h;d.pointBackgroundColor=h;d.pointBorderColor=s;
+    const sc=chart.options.scales;[sc.x,sc.y].forEach(a=>{a.ticks.color=m;a.grid.color=l;a.border={color:l};});chart.update();}
+  paint();
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');(mq.addEventListener?mq.addEventListener('change',paint):mq.addListener(paint));
+  new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  // 계산기
+  const HKSH=last?last.hkSh:66762279, KALSH=last?last.kalSh:368220000, HKNOW=last?last.hk:null, KALNOW=last?last.kal:27425;
+  const kalEl=document.getElementById('kal'), rEl=document.getElementById('ratio');
+  kalEl.value=Math.round(KALNOW/5)*5;
+  const KPRE=[[KALNOW,'최근 종가 '+KALNOW.toLocaleString('ko-KR')],[30000,'30,000'],[35000,'35,000'],[40500,'증권사 목표가 평균 40,500'],[45000,'45,000']];
+  document.getElementById('kalChips').innerHTML=KPRE.map(([v,t])=>'<button type="button" class="chip" data-v="'+v+'">'+t+'</button>').join('');
+  const caseOf=r=>r>=2.58?'2020 최고점 이상':r>=1.61?'2020 공격 초입~최고점':r>=1.13?'호반 고점~2020 초입':r>=0.91?'호반 20%~호반 고점':r>=0.78?'냉각~호반 20%':'분쟁 없던 시기 수준';
+  const price=(r,p)=>r*p*KALSH/HKSH;
+  function calc(){const p=+kalEl.value,r=+rEl.value;
+    document.getElementById('kalVal').textContent=won(p);document.getElementById('ratioVal').textContent=r.toFixed(2)+'배';
+    const v=price(r,p);document.getElementById('oPrice').textContent=won(v);
+    document.getElementById('oVs').textContent=HKNOW?('최근 한진칼 종가 '+won(HKNOW)+' 대비 '+(v/HKNOW-1>=0?'+':'')+((v/HKNOW-1)*100).toFixed(1)+'%'):'-';
+    document.getElementById('oHk').textContent=jo(v*HKSH);document.getElementById('oKal').textContent=jo(p*KALSH);
+    document.getElementById('oKalS').textContent='대한항공 주식 '+(KALSH/1e8).toFixed(3)+'억 주';
+    document.getElementById('oCase').textContent=caseOf(r);
+    sync('kalChips',p);sync('ratioChips',r);}
+  function sync(id,v){document.querySelectorAll('#'+id+' .chip').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.v-v)<1e-6));}
+  function bind(id,el){document.querySelectorAll('#'+id+' .chip').forEach(b=>b.addEventListener('click',()=>{el.value=b.dataset.v;calc();}));}
+  bind('kalChips',kalEl);bind('ratioChips',rEl);kalEl.addEventListener('input',calc);rEl.addEventListener('input',calc);calc();
+
+  // 조합표
+  const RS=[['냉각 2026.5',0.78],['호반 20% 2026.7',0.91],['호반 국면 고점',1.13],['2020 공격 초입',1.61],['2020 분쟁 최고점',2.58]];
+  const PS=[KALNOW,30000,35000,40500,45000];
+  document.getElementById('gridHead').innerHTML='<tr><th>시총 비율</th>'+PS.map((p,i)=>'<th>대한항공 '+p.toLocaleString('ko-KR')+'원'+(i===0?'<br>(최근 종가)':i===3?'<br>(증권사 목표 평균)':'')+'</th>').join('')+'</tr>';
+  let best=null,bd=Infinity;RS.forEach(([,r])=>{const d=Math.abs(price(r,KALNOW)-(HKNOW||0));if(d<bd){bd=d;best=r;}});
+  document.getElementById('gridBody').innerHTML=RS.map(([n,r])=>'<tr><td>'+n+' · '+r.toFixed(2)+'배</td>'+PS.map((p,i)=>{const v=price(r,p);const c=[(HKNOW&&v>=HKNOW)?'hit':'',(i===0&&r===best)?'now':''].join(' ').trim();return '<td class="num '+c+'">'+won(Math.round(v/100)*100)+'</td>';}).join('')+'</tr>').join('');
+})();
+</script>
+
+</body>
+</html>
