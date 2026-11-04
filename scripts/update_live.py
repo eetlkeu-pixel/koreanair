@@ -52,7 +52,10 @@ def closes(code):
 
 def main():
     html = open(PATH, encoding="utf-8").read()
-    rows = re.findall(r'\{d:"(\d{4}-\d{2}-\d{2})",hk:\d+,kal:\d+,hkSh:(\d+),kalSh:(\d+)', html)
+    # tmp:1 행은 장중 임시값이라 확정 종가가 나오면 대체한다
+    tmp_re = r'\{d:"(\d{4}-\d{2}-\d{2})",hk:\d+,kal:\d+,hkSh:(\d+),kalSh:(\d+),tmp:1,[^\n]*\n'
+    final = re.sub(tmp_re, "", html)
+    rows = re.findall(r'\{d:"(\d{4}-\d{2}-\d{2})",hk:\d+,kal:\d+,hkSh:(\d+),kalSh:(\d+)', final)
     last_d, hk_sh, kal_sh = max(rows)
     hk, hk_src = closes(CODES["hk"])
     kal, kal_src = closes(CODES["kal"])
@@ -61,6 +64,8 @@ def main():
     if not new_days:
         print(f"새 거래일 없음 (마지막 {last_d})")
         return
+    for d in new_days:  # 같은 날짜의 임시 행 제거
+        html = re.sub(r'\{d:"' + d + r'",[^\n]*tmp:1,[^\n]*\n', "", html)
     src = f"한진칼·대한항공 종가({hk_src})" if hk_src == kal_src else f"한진칼 종가({hk_src}), 대한항공 종가({kal_src})"
     lines = "".join(
         f'{{d:"{d}",hk:{hk[d]},kal:{kal[d]},hkSh:{hk_sh},kalSh:{kal_sh},src:"{src}"}},\n' for d in new_days
