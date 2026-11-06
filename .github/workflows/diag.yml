@@ -1,0 +1,16 @@
+name: diag
+on:
+  push:
+    branches: [ccr-a717fba5-qehuup]
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA="Mozilla/5.0"
+          for c in 180640 003490; do
+            echo "=== $c fchart"; curl -s -A "$UA" "https://fchart.stock.naver.com/sise.nhn?symbol=$c&timeframe=day&count=4&requestType=0" | grep item
+            echo "=== $c siseJson"; curl -s -A "$UA" "https://api.finance.naver.com/siseJson.naver?symbol=$c&requestType=1&startTime=20261102&endTime=20261106&timeframe=day"
+            echo "=== $c m.stock price"; curl -s -A "$UA" "https://m.stock.naver.com/api/stock/$c/price?pageSize=4&page=1" | head -c 1500; echo
+            echo "=== $c yahoo"; curl -s -A "$UA" "https://query1.finance.yahoo.com/v8/finance/chart/$c.KS?range=5d&interval=1d" | python3 -c "import sys,json;r=json.load(sys.stdin)['chart']['result'][0];print(r['timestamp'],r['indicators']['quote'][0]['close'])" || true
+          done
