@@ -5,6 +5,8 @@ on:
   schedule:
     # 평일 16:20 KST (07:20 UTC), 장 마감 15:30 이후
     - cron: '20 7 * * 1-5'
+    # 예약 실행이 밀리거나 빠질 때를 대비한 보조 실행 (21:47 KST)
+    - cron: '47 12 * * 1-5'
   workflow_dispatch:
 permissions:
   contents: write

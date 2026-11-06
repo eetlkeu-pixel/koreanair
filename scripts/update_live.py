@@ -1,6 +1,8 @@
 """Append daily closing prices for 한진칼(180640) and 대한항공(003490) to LIVE in index.html.
 
-Source: Naver fchart (primary), Yahoo Finance chart API (fallback).
+Source: Yahoo Finance chart API (KRX 정규장 종가).
+네이버 차트는 넥스트레이드(NXT) 애프터마켓까지 합친 마지막 가격이라 쓰지 않는다.
+당일은 KST 15:40 이후에만 종가로 인정한다.
 Adds every trading day after the last LIVE row on which both closes exist.
 Share counts are carried forward from the last row.
 """
@@ -19,16 +21,6 @@ def get(url):
         return r.read()
 
 
-def naver(code):
-    raw = get(f"https://fchart.stock.naver.com/sise.nhn?symbol={code}&timeframe=day&count=30&requestType=0")
-    text = raw.decode("euc-kr", errors="replace")
-    out = {}
-    for m in re.finditer(r'data="(\d{8})\|[^|]*\|[^|]*\|[^|]*\|(\d+)\|', text):
-        d = m.group(1)
-        out[f"{d[:4]}-{d[4:6]}-{d[6:]}"] = int(m.group(2))
-    return out
-
-
 def yahoo(code):
     raw = get(f"https://query1.finance.yahoo.com/v8/finance/chart/{code}.KS?range=1mo&interval=1d")
     res = json.loads(raw)["chart"]["result"][0]
@@ -40,7 +32,7 @@ def yahoo(code):
 
 
 def closes(code):
-    for name, fn in (("네이버", naver), ("Yahoo", yahoo)):
+    for name, fn in (("Yahoo", yahoo),):
         try:
             data = fn(code)
             if data:
@@ -59,14 +51,17 @@ def main():
     last_d, hk_sh, kal_sh = max(rows)
     hk, hk_src = closes(CODES["hk"])
     kal, kal_src = closes(CODES["kal"])
-    today = datetime.now(KST).strftime("%Y-%m-%d")
+    now = datetime.now(KST)
+    today = now.strftime("%Y-%m-%d")
+    if (now.hour, now.minute) < (15, 40):  # 장중이면 당일 봉은 종가가 아님
+        today = (now - timedelta(days=1)).strftime("%Y-%m-%d")
     new_days = sorted(d for d in set(hk) & set(kal) if last_d < d <= today)
     if not new_days:
         print(f"새 거래일 없음 (마지막 {last_d})")
         return
     for d in new_days:  # 같은 날짜의 임시 행 제거
         html = re.sub(r'\{d:"' + d + r'",[^\n]*tmp:1,[^\n]*\n', "", html)
-    src = f"한진칼·대한항공 종가({hk_src})" if hk_src == kal_src else f"한진칼 종가({hk_src}), 대한항공 종가({kal_src})"
+    src = f"한진칼·대한항공 KRX 종가({hk_src})"
     lines = "".join(
         f'{{d:"{d}",hk:{hk[d]},kal:{kal[d]},hkSh:{hk_sh},kalSh:{kal_sh},src:"{src}"}},\n' for d in new_days
     )
