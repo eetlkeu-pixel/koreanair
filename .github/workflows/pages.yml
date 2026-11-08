@@ -7,6 +7,8 @@ on:
     - cron: '20 7 * * 1-5'
     # 예약 실행이 밀리거나 빠질 때를 대비한 보조 실행 (21:47 KST)
     - cron: '47 12 * * 1-5'
+    # 전날 종가가 늦게 확정된 경우를 채우는 아침 실행 (08:47 KST, 화~토)
+    - cron: '47 23 * * 1-5'
   workflow_dispatch:
 permissions:
   contents: write
