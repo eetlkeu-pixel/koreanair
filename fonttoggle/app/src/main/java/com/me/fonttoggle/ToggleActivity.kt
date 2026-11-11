@@ -9,6 +9,8 @@ import android.widget.Toast
 class ToggleActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 글자 크기 변경으로 화면이 다시 만들어진 경우엔 또 토글하지 않음
+        if (savedInstanceState != null) { finish(); return }
         if (FontScaler.canWrite(this)) {
             FontScaler.toggle(this)
         } else {

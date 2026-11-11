@@ -47,8 +47,14 @@ object FontScaler {
      * 지금이 큰 값이면 작은 값으로, 그 외에는 큰 값으로.
      * @return 성공 여부 (권한 없으면 false)
      */
+    @Volatile private var lastToggleAt = -10_000L
+
     fun toggle(ctx: Context): Boolean {
         if (!canWrite(ctx)) return false
+        // 1.5초 안에 두 번 실행되면 무시 (중복 토글 방지)
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastToggleAt in 0..1500) return true
+        lastToggleAt = now
         val target = if (isLarge(ctx)) small(ctx) else large(ctx)
         return set(ctx, target)
     }
