@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>심리적 안녕감 설문</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5d6677; --line: #dde1e8;
+    --accent: #2f6fde; --accent-soft: #e6eefc; --low: #d9822b; --mid: #6b7a99; --high: #2a9d6a; --err: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171d; --card: #1d2129; --text: #e8ebf0; --muted: #9aa3b2; --line: #2e3440;
+      --accent: #6c9cf0; --accent-soft: #24304a; --low: #e9a05a; --mid: #93a0ba; --high: #4cc08e; --err: #ef6b5b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    -webkit-text-size-adjust: 100%; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 1.4rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.15rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 12px 0; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: 600;
+    background: var(--accent); color: #fff; cursor: pointer; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  .row { display: flex; gap: 8px; margin-top: 16px; }
+  .row .btn { flex: 1; }
+  .progress { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .q { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .q:last-child { border-bottom: 0; }
+  .q.missing .qt { color: var(--err); }
+  .qt { margin-bottom: 10px; font-weight: 500; }
+  .qt b { color: var(--accent); margin-right: 6px; }
+  .opts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .opts label { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
+    font-size: .72rem; color: var(--muted); text-align: center; line-height: 1.25; }
+  .opts input { position: absolute; opacity: 0; pointer-events: none; }
+  .opts span.n { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px solid var(--line); font-size: 1rem; font-weight: 600; color: var(--text); background: var(--card); }
+  .opts input:checked + span.n { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .opts input:focus-visible + span.n { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .legend { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); }
+  .err { color: var(--err); font-size: .92rem; margin-top: 10px; }
+  .code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.15rem; font-weight: 700; letter-spacing: .05em; }
+  .total { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .total .big { font-size: 2.2rem; font-weight: 700; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .85rem; font-weight: 600; color: #fff; }
+  .tag.낮음 { background: var(--low); } .tag.보통 { background: var(--mid); } .tag.높음 { background: var(--high); }
+  .chart { margin-top: 8px; }
+  .crow { display: grid; grid-template-columns: 7.5em 1fr 3.2em; align-items: center; gap: 8px; margin: 8px 0; font-size: .92rem; }
+  .ctrack { position: relative; height: 18px; background: var(--accent-soft); border-radius: 4px; }
+  .cfill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+  .cfill.낮음 { background: var(--low); } .cfill.보통 { background: var(--mid); } .cfill.높음 { background: var(--high); }
+  .cmark { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1px dashed var(--muted); }
+  .cval { text-align: right; font-variant-numeric: tabular-nums; }
+  .caxis { display: grid; grid-template-columns: 7.5em 1fr 3.2em; gap: 8px; font-size: .75rem; color: var(--muted); }
+  .caxis div:nth-child(2) { position: relative; height: 1.2em; }
+  .caxis span { position: absolute; transform: translateX(-50%); }
+  .dom h3 { font-size: 1rem; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dom { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .dom:last-child { border-bottom: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="intro">
+    <h1>심리적 안녕감 설문</h1>
+    <p class="muted">Ryff의 심리적 안녕감 6개 영역 · 48문항 · 약 7분</p>
+    <div class="card">
+      <p>요즘 자신의 모습에 비추어 각 문장에 얼마나 동의하는지 1~5 중에서 골라 주세요. 정답은 없습니다.</p>
+      <p>로그인은 필요 없고 이름이나 연락처도 묻지 않습니다. 응답은 무작위 응답 코드로만 저장되며, 제출하면 바로 총점과 영역별 결과를 볼 수 있습니다.</p>
+      <p class="muted">이 결과는 자기 이해를 위한 참고 자료이며 의학적·심리학적 진단이 아닙니다.</p>
+      <button class="btn" id="start">시작하기</button>
+      <p class="err" id="cfgErr" hidden>설문 서버 주소가 아직 설정되지 않았습니다. 운영자에게 문의해 주세요.</p>
+    </div>
+  </section>
+
+  <section id="survey" hidden>
+    <div class="progress">
+      <div class="legend"><span id="pageLabel"></span><span id="countLabel"></span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div class="card">
+      <div class="legend"><span>1 전혀 그렇지 않다</span><span>5 매우 그렇다</span></div>
+      <div id="qs"></div>
+    </div>
+    <p class="err" id="pageErr" hidden></p>
+    <div class="row">
+      <button class="btn ghost" id="prev">이전</button>
+      <button class="btn" id="next">다음</button>
+    </div>
+  </section>
+
+  <section id="result" hidden>
+    <h1>나의 심리적 안녕감 결과</h1>
+    <div class="card">
+      <p class="muted">응답 코드</p>
+      <p class="code" id="rCode"></p>
+      <p class="muted">이 코드로 운영자가 응답을 확인할 수 있습니다. 필요하면 화면을 캡처해 두세요.</p>
+    </div>
+    <div class="card">
+      <h2>총점</h2>
+      <div class="total"><span class="big" id="rTotal"></span><span class="muted">/ 240점</span><span class="tag" id="rTotalTag"></span></div>
+      <p id="rTotalText" style="margin-top:8px"></p>
+    </div>
+    <div class="card">
+      <h2>영역별 점수</h2>
+      <p class="muted">영역마다 8문항, 8~40점입니다. 막대는 문항 평균(1~5)이며 점선은 해석 구간(2.5 / 3.5)입니다.</p>
+      <div class="chart" id="rChart"></div>
+    </div>
+    <div class="card">
+      <h2>영역별 해석</h2>
+      <div id="rDomains"></div>
+    </div>
+    <p class="muted">이 결과는 자기 이해를 돕기 위한 참고 자료이며 진단이 아닙니다. 마음이 많이 힘들다면 정신건강위기상담전화 109 등 전문 기관의 도움을 받으세요.</p>
+  </section>
+</main>
+
+<script src="items.js"></script>
+<script src="interpret.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
