@@ -25,10 +25,10 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btn_save_small).setOnClickListener {
             FontScaler.saveSmall(this, FontScaler.current(this)); refresh()
         }
-        findViewById<Button>(R.id.btn_large_minus).setOnClickListener { nudgeLarge(-0.05f) }
-        findViewById<Button>(R.id.btn_large_plus).setOnClickListener { nudgeLarge(+0.05f) }
-        findViewById<Button>(R.id.btn_small_minus).setOnClickListener { nudgeSmall(-0.05f) }
-        findViewById<Button>(R.id.btn_small_plus).setOnClickListener { nudgeSmall(+0.05f) }
+        findViewById<Button>(R.id.btn_large_minus).setOnClickListener { nudgeLarge(-0.1f) }
+        findViewById<Button>(R.id.btn_large_plus).setOnClickListener { nudgeLarge(+0.1f) }
+        findViewById<Button>(R.id.btn_small_minus).setOnClickListener { nudgeSmall(-0.1f) }
+        findViewById<Button>(R.id.btn_small_plus).setOnClickListener { nudgeSmall(+0.1f) }
         findViewById<Button>(R.id.btn_toggle).setOnClickListener {
             FontScaler.toggle(this); refresh()
         }
@@ -54,7 +54,8 @@ class MainActivity : Activity() {
         status.text = buildString {
             append("지금 글자 크기: ${FontScaler.fmt(FontScaler.current(this@MainActivity))}\n")
             append("큰 크기: ${FontScaler.fmt(FontScaler.large(this@MainActivity))}   ")
-            append("작은 크기: ${FontScaler.fmt(FontScaler.small(this@MainActivity))}")
+            append("작은 크기: ${FontScaler.fmt(FontScaler.small(this@MainActivity))}\n")
+            append("마지막 적용: ${FontScaler.lastResult}")
         }
         FontScaler.refreshUi(this)
     }

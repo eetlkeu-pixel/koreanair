@@ -47,6 +47,8 @@ object FontScaler {
      * 지금이 큰 값이면 작은 값으로, 그 외에는 큰 값으로.
      * @return 성공 여부 (권한 없으면 false)
      */
+    @Volatile var lastResult: String = "-"
+
     @Volatile private var lastToggleAt = -10_000L
 
     fun toggle(ctx: Context): Boolean {
@@ -62,9 +64,13 @@ object FontScaler {
     fun set(ctx: Context, value: Float): Boolean {
         return try {
             val ok = Settings.System.putFloat(ctx.contentResolver, Settings.System.FONT_SCALE, value)
+            val actual = current(ctx)
+            lastResult = "요청 ${fmt(value)} → 실제 ${fmt(actual)}" + if (ok) "" else " (쓰기 실패)"
             if (ok) {
                 val label = if (abs(value - large(ctx)) < 0.01f) "글자 크게" else "글자 작게"
-                Toast.makeText(ctx.applicationContext, "$label (${fmt(value)})", Toast.LENGTH_SHORT).show()
+                val msg = if (abs(actual - value) < 0.01f) "$label (${fmt(value)})"
+                          else "$label: ${fmt(value)} 요청했지만 기기가 ${fmt(actual)}로 제한함"
+                Toast.makeText(ctx.applicationContext, msg, Toast.LENGTH_SHORT).show()
                 refreshUi(ctx)
             }
             ok
