@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="글자 크기 토글 설정"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btn_perm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="② 실제 폰 단계에 맞추기\n휴대폰 설정 › 글자 크기와 스타일에서 슬라이더를 원하는 칸에 둔 뒤, 이 화면으로 돌아와 아래 버튼을 누르세요.\n· 맨 오른쪽 칸 → '큰 크기로 저장'\n· 왼쪽에서 4번째 칸 → '작은 크기로 저장'"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_save_large"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="지금 크기를 '큰 크기'로 저장" />
+
+        <Button
+            android:id="@+id/btn_save_small"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="지금 크기를 '작은 크기'로 저장" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="미세 조정 (0.05 단위)"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btn_large_minus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="큰 −" />
+            <Button android:id="@+id/btn_large_plus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="큰 +" />
+            <Button android:id="@+id/btn_small_minus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="작은 −" />
+            <Button android:id="@+id/btn_small_plus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="작은 +" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="지금 토글해 보기" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="③ 쓰는 법\n· 홈 아이콘 '글자토글'을 누르면 바로 바뀝니다.\n· 상단바를 내리고 연필(편집) 버튼 › '글자 크기' 타일을 추가하면 어디서든 누를 수 있어요.\n· 홈 화면 위젯도 있어요.\n\n변경이 막힐 때(일부 기기): PC에서\nadb shell pm grant com.me.fonttoggle android.permission.WRITE_SECURE_SETTINGS"
+            android:textIsSelectable="true"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

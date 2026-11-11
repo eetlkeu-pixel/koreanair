@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">글자토글</string>
+    <string name="settings_label">글자토글 설정</string>
+    <string name="settings_short">설정</string>
+    <string name="tile_label">글자 크기</string>
+</resources>
