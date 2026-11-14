@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "weight": [
+    {"date": "2026-01-01", "device": "INBODY", "kg": 80.0, "smm": 35.0, "pbf": 20.0, "fat": 16.0},
+    {"date": "2026-01-08", "device": "HOME", "kg": 79.5}
+  ],
+  "archive": [
+    {"label": "2025", "short": "'25", "avg": 82.0, "min": 80.0, "max": 84.0}
+  ]
+}

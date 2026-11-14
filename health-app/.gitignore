@@ -1,0 +1,7 @@
+.gradle/
+build/
+local.properties
+*.apk
+# 개인 서명 키와 개인 측정 데이터는 저장소에 올리지 않는다
+signing/
+app/src/main/assets/seed.json
