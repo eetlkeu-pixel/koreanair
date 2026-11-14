@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "paperthin": {
+      "source": {
+        "source": "github",
+        "repo": "LilMGenius/paperthin"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "paperthin@paperthin": true
+  }
+}
