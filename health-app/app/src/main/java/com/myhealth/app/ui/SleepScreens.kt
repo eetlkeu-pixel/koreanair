@@ -166,7 +166,7 @@ fun SleepLogScreen(vm: AppViewModel) {
     val sleeps by vm.sleeps.collectAsStateWithLifecycle()
     val st by vm.settings.collectAsStateWithLifecycle()
     val perm by vm.hasPermission.collectAsStateWithLifecycle()
-    var count by rememberSaveable { mutableIntStateOf(30) }
+    var count by rememberSaveable { mutableIntStateOf(7) }
     var editing by remember { mutableStateOf<Long?>(null) }
     val today = today()
     val byDay = sleeps.associateBy { it.day }
@@ -177,6 +177,14 @@ fun SleepLogScreen(vm: AppViewModel) {
         if (!perm) item { Spacer(Modifier.height(8.dp)); PermissionCard() }
         item {
             Spacer(Modifier.height(8.dp))
+            val week = (today - 6..today).map { d -> byDay[d]?.takeIf { it.valid }?.minutes }
+            SectionCard("최근 7일 수면시간") {
+                SleepBarChart(today - 6, week, st.targetSleepMin, Modifier.fillMaxWidth().height(190.dp))
+                val rec = week.filterNotNull()
+                Muted(if (rec.isEmpty()) "최근 7일 기록이 없습니다"
+                else "평균 ${dur(rec.sum() / rec.size)} (기록 ${rec.size}일) · 점선 = 목표 ${dur(st.targetSleepMin)}")
+            }
+            Spacer(Modifier.height(12.dp))
             TimelineAxis(st.winStartMin, st.winLenMin, Modifier.fillMaxWidth().height(16.dp))
         }
         items((0 until count).map { today - it }, key = { it }) { day ->
@@ -201,8 +209,13 @@ fun SleepLogScreen(vm: AppViewModel) {
                 )
             }
         }
-        if (count < 365) item {
-            TextButton(onClick = { count += 30 }, modifier = Modifier.fillMaxWidth()) { Text("이전 30일 더 보기") }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                if (count < 365) TextButton(onClick = { count = if (count == 7) 30 else count + 30 }) {
+                    Text(if (count == 7) "이전 기록 상세보기" else "이전 30일 더 보기")
+                }
+                if (count > 7) TextButton(onClick = { count = 7 }) { Text("최근 7일만 보기") }
+            }
         }
     }
 

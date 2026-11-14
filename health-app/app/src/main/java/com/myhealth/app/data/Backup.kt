@@ -22,7 +22,7 @@ object Backup {
             .put("winStartMin", s.winStartMin).put("winEndMin", s.winEndMin)
             .put("minSleepMin", s.minSleepMin).put("shortUseMin", s.shortUseMin)
             .put("mergeGapMin", s.mergeGapMin).put("latencyMin", s.latencyMin)
-            .put("targetSleepMin", s.targetSleepMin).put("goal1", s.goal1).put("goal2", s.goal2))
+            .put("targetSleepMin", s.targetSleepMin).put("goal1", s.goal1).put("goal2", s.goal2).put("heightCm", s.heightCm))
         root.put("sleep", JSONArray().also { a ->
             db.sleep().list().forEach {
                 a.put(JSONObject().put("date", LocalDate.ofEpochDay(it.day).toString())
@@ -61,7 +61,7 @@ object Backup {
                 o.optInt("minSleepMin", d.minSleepMin), o.optInt("shortUseMin", d.shortUseMin),
                 o.optInt("mergeGapMin", d.mergeGapMin), o.optInt("latencyMin", d.latencyMin),
                 o.optInt("targetSleepMin", d.targetSleepMin),
-                o.optDouble("goal1", d.goal1), o.optDouble("goal2", d.goal2)))
+                o.optDouble("goal1", d.goal1), o.optDouble("goal2", d.goal2), o.optDouble("heightCm", d.heightCm)))
         }
         root.optJSONArray("sleep")?.let { a ->
             for (i in 0 until a.length()) {

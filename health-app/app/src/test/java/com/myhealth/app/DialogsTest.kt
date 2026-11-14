@@ -1,6 +1,9 @@
 package com.myhealth.app
 
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
@@ -47,6 +50,7 @@ class DialogsTest {
 
     @Test fun sleepEditDialog() {
         rule.onNodeWithText("수면").performClick()
+        rule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("기록 없음"))
         rule.onAllNodesWithText("기록 없음").onFirst().performClick()
         rule.onNodeWithText("취침 시각").assertExists()
         rule.onNodeWithText("저장").performClick()

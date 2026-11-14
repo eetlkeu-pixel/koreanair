@@ -71,6 +71,20 @@ class ScreensTest {
         rule.onNodeWithText("분석").performClick(); shot("4-analysis")
         rule.onNodeWithText("체중").performClick(); shot("5-weight")
         rule.onNodeWithText("장기 기록 (삼성 헬스 캡처)").performScrollTo(); shot("6-weight-archive")
+        rule.onNodeWithText("BMI = 체중", substring = true).performScrollTo(); shot("7-weight-bmi")
         rule.onNodeWithText("설정").performClick(); shot("8-settings")
+    }
+
+    /** 홈 화면 위젯 레이아웃이 실제로 만들어지고 값이 들어가는지 확인 */
+    @Test fun widgetBuilds() {
+        val ctx = ApplicationProvider.getApplicationContext<Context>()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("98.0", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        seedSleep()
+        val views = runBlocking { com.myhealth.app.widget.HealthWidget.build(ctx) }
+        val root = views.apply(ctx, android.widget.FrameLayout(ctx))
+        fun text(id: Int) = root.findViewById<android.widget.TextView>(id).text.toString()
+        org.junit.Assert.assertEquals("8시간 0분", text(R.id.w_sleep))
+        org.junit.Assert.assertEquals("01:00–09:00 · 7일 평균 6시간 39분", text(R.id.w_times))
+        org.junit.Assert.assertEquals("체중 98.0kg · 89.0까지 9.0kg", text(R.id.w_weight))
     }
 }

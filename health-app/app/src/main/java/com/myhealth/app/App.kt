@@ -13,9 +13,11 @@ import com.myhealth.app.data.SRC_MANUAL
 import com.myhealth.app.data.Settings
 import com.myhealth.app.data.SleepRec
 import com.myhealth.app.data.WeightRec
+import com.myhealth.app.widget.HealthWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -47,6 +49,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch(Dispatchers.IO) { Backup.seedIfNeeded(app) }
+        // 수면·체중·설정이 바뀌면 홈 화면 위젯도 바로 갱신
+        viewModelScope.launch(Dispatchers.IO) {
+            combine(sleeps, weights, settings) { _, _, _ -> }.collect { runCatching { HealthWidget.render(app) } }
+        }
     }
 
     /** 앱을 열 때마다 권한을 다시 확인하고 미수집 날짜를 재수집 */

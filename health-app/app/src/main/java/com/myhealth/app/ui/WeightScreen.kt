@@ -44,9 +44,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.myhealth.app.AppViewModel
+import com.myhealth.app.core.WPoint
 import com.myhealth.app.core.WeightModel
 import com.myhealth.app.data.DEV_HOME
 import com.myhealth.app.data.DEV_INBODY
+import com.myhealth.app.data.Settings
 import com.myhealth.app.data.WeightRec
 
 private fun shortDate(day: Long?) = day?.let { dayIso(it).substring(2).replace('-', '.') } ?: "—"
@@ -103,6 +105,8 @@ fun WeightScreen(vm: AppViewModel) {
                 }
             }
 
+            if (latest != null) ForecastCard(pts, st)
+
             if (pts.isNotEmpty()) {
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     listOf("최근 8주", "최근 16주", "전체").forEachIndexed { i, s ->
@@ -114,7 +118,8 @@ fun WeightScreen(vm: AppViewModel) {
                 SectionCard("실측 추이") {
                     if (shown.isEmpty()) Muted("이 기간에 측정이 없습니다") else {
                         val selIdx = shown.indexOfFirst { it.day == selectedDay }.takeIf { it >= 0 }
-                        WeightChart(shown, st.goal1, st.goal2, selIdx, { selectedDay = shown[it].day }, Modifier.fillMaxWidth().height(230.dp))
+                        LineChart(shown.map { ChartPoint(it.day, it.kg, it.device != DEV_INBODY) }, goalRefs(st),
+                            Modifier.fillMaxWidth().height(230.dp), selIdx, { selectedDay = shown[it].day }, yInclude = listOf(st.goal1))
                         val sp = selIdx?.let { shown[it] }
                         Muted(if (sp != null) "${dayShort(sp.day)} · ${kg(sp.kg)}kg · ${deviceName(sp.device)}"
                         else "● 인바디  ○ 집 체중계 · 점을 누르면 날짜와 값이 표시됩니다")
@@ -162,6 +167,8 @@ fun WeightScreen(vm: AppViewModel) {
                 }
             }
 
+            if (latest != null) BmiCard(pts, st)
+
             // ── 실측 원장 ──
             if (weights.isNotEmpty()) SectionCard("날짜별 실측 원장 (${weights.size}회)") {
                 Muted("행을 누르면 수정·삭제할 수 있습니다.")
@@ -186,6 +193,61 @@ fun WeightScreen(vm: AppViewModel) {
 
     if (adding) WeightDialog(null, vm) { adding = false }
     editing?.let { WeightDialog(it, vm) { editing = null } }
+}
+
+@Composable
+private fun goalRefs(st: Settings) = listOf(
+    RefLine(st.goal1, "목표 ${kg(st.goal1)}", MaterialTheme.colorScheme.secondary),
+    RefLine(st.goal2, "목표 ${kg(st.goal2)}", MaterialTheme.colorScheme.tertiary),
+)
+
+/** 현 추세(전체 평균 속도)로 목표에 언제 도착하는지 그래프로 보여준다 */
+@Composable
+private fun ForecastCard(pts: List<WPoint>, st: Settings) {
+    val latest = pts.last()
+    val sc = WeightModel.scenarios(pts, st.goal1, st.goal2).first()
+    val today = today()
+    SectionCard("목표 도달 예상 · 현 추세") {
+        val stops = listOfNotNull(sc.goal1Day?.let { it to st.goal1 }, sc.goal2Day?.let { it to st.goal2 })
+        if (latest.kg <= st.goal2) {
+            Text("목표 ${kg(st.goal2)}kg 달성!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        } else if (stops.isEmpty()) {
+            Muted("감량 추세가 잡히면(측정 2회 이상, 체중 감소) 예상 도달일이 표시됩니다.")
+        } else {
+            Row(Modifier.fillMaxWidth()) {
+                stops.forEach { (day, goal) ->
+                    Stat("${kg(goal)}kg 도착", dayIso(day), Modifier.weight(1f), "D-${day - today} · 앞으로 ${kg(latest.kg - goal)}kg")
+                }
+            }
+            LineChart(pts.map { ChartPoint(it.day, it.kg, it.device != DEV_INBODY) }, goalRefs(st),
+                Modifier.fillMaxWidth().height(250.dp),
+                forecast = stops.map { (day, goal) -> Forecast(day, goal, "${kg(goal)} · ${shortDate(day)}") },
+                yInclude = listOf(stops.last().second - 4))
+            Muted("실선 = 실측, 점선 = 지금까지의 평균 속도(주 ${"%.2f".format(sc.rate)}kg)를 유지했을 때의 예상. 측정을 추가하면 다시 계산됩니다.")
+        }
+    }
+}
+
+private fun bmiClass(b: Double) = when {
+    b < 18.5 -> "저체중"; b < 23 -> "정상"; b < 25 -> "비만 전단계"
+    b < 30 -> "1단계 비만"; b < 35 -> "2단계 비만"; else -> "3단계 비만"
+}
+
+@Composable
+private fun BmiCard(pts: List<WPoint>, st: Settings) {
+    val now = st.bmi(pts.last().kg)
+    val cs = MaterialTheme.colorScheme
+    SectionCard("BMI 추이 · 키 ${kg(st.heightCm)}cm") {
+        Row(Modifier.fillMaxWidth()) {
+            Stat("현재 BMI", kg(now), Modifier.weight(1f), bmiClass(now))
+            Stat("${kg(st.goal1)}kg일 때", kg(st.bmi(st.goal1)), Modifier.weight(1f), bmiClass(st.bmi(st.goal1)))
+            Stat("${kg(st.goal2)}kg일 때", kg(st.bmi(st.goal2)), Modifier.weight(1f), bmiClass(st.bmi(st.goal2)))
+        }
+        LineChart(pts.map { ChartPoint(it.day, st.bmi(it.kg), it.device != DEV_INBODY) },
+            listOf(RefLine(30.0, "2단계 비만 30", cs.error), RefLine(25.0, "1단계 비만 25", cs.tertiary), RefLine(23.0, "비만 전단계 23", cs.secondary)),
+            Modifier.fillMaxWidth().height(220.dp), yInclude = listOf(25.0))
+        Muted("BMI = 체중 ÷ 키². 구간은 대한비만학회 기준(23 / 25 / 30 / 35). 키는 설정에서 바꿀 수 있습니다.")
+    }
 }
 
 private val WEEK_COLS = listOf(1.5f, 0.7f, 0.8f, 0.8f, 1.6f)

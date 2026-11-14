@@ -116,6 +116,7 @@ object Collector {
 class CollectWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
         Collector.collect(applicationContext)
+        runCatching { com.myhealth.app.widget.HealthWidget.render(applicationContext) }
         return Result.success()
     }
 }

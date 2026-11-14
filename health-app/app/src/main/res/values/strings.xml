@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">나의 건강</string>
+    <string name="widget_desc">어젯밤 수면시간, 7일 평균, 최신 체중</string>
 </resources>

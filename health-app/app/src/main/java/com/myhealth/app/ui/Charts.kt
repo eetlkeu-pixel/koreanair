@@ -23,9 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.myhealth.app.core.WPoint
 import com.myhealth.app.data.ArchiveRec
-import com.myhealth.app.data.DEV_INBODY
 import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -34,10 +32,12 @@ import kotlin.math.floor
 /** align: 0 = 왼쪽 기준, 0.5 = 가운데, 1 = 오른쪽 기준. 화면 밖으로 나가지 않게 가로 위치를 보정한다. */
 private fun DrawScope.label(
     tm: TextMeasurer, text: String, x: Float, y: Float, color: Color,
-    align: Float = 0f, bold: Boolean = false, sp: Int = 10,
+    align: Float = 0f, bold: Boolean = false, sp: Int = 10, bg: Color? = null,
 ) {
     val l = tm.measure(text, TextStyle(color = color, fontSize = sp.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal))
     val left = (x - l.size.width * align).coerceIn(0f, maxOf(0f, size.width - l.size.width))
+    // 선 위에 겹치는 글자는 배경을 깔아 읽기 쉽게
+    if (bg != null) drawRect(bg, Offset(left - 2f, y), Size(l.size.width + 4f, l.size.height.toFloat()))
     drawText(l, topLeft = Offset(left, y))
 }
 
@@ -48,27 +48,40 @@ private fun niceStep(range: Double): Double {
     return listOf(0.5, 1.0, 2.0, 5.0, 10.0, 20.0).firstOrNull { it >= raw } ?: 50.0
 }
 
-/** 실측 체중 추이. 날짜 간격대로 배치하고 목표선을 점선으로 표시한다. */
+data class ChartPoint(val day: Long, val v: Double, val hollow: Boolean = false)
+data class RefLine(val v: Double, val label: String, val color: Color)
+/** 최신 실측 이후의 예상 지점 (날짜, 값, 표시 문구) */
+data class Forecast(val day: Long, val v: Double, val label: String)
+
+/**
+ * 날짜 간격대로 배치하는 선 그래프. 기준선(목표 등)은 점선, 예상 구간은 최신점에서 이어지는 점선으로 그린다.
+ * yInclude 의 값은 세로축 범위에 항상 포함한다.
+ */
 @Composable
-fun WeightChart(points: List<WPoint>, goal1: Double, goal2: Double, selected: Int?, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun LineChart(
+    points: List<ChartPoint>, refs: List<RefLine>, modifier: Modifier = Modifier,
+    selected: Int? = null, onSelect: ((Int) -> Unit)? = null,
+    forecast: List<Forecast> = emptyList(), yInclude: List<Double> = emptyList(),
+) {
     val tm = rememberTextMeasurer()
     val cs = MaterialTheme.colorScheme
-    Canvas(modifier.pointerInput(points) {
+    val lastDay = maxOf(points.lastOrNull()?.day ?: 0, forecast.lastOrNull()?.day ?: 0)
+    Canvas(modifier.pointerInput(points, lastDay) {
         detectTapGestures { off ->
-            if (points.isEmpty()) return@detectTapGestures
+            if (points.isEmpty() || onSelect == null) return@detectTapGestures
             val l = 36.dp.toPx(); val w = size.width - l - 14.dp.toPx()
-            val d0 = points.first().day; val span = maxOf(1L, points.last().day - d0)
+            val d0 = points.first().day; val span = maxOf(1L, lastDay - d0)
             onSelect(points.indices.minBy { abs(l + (points[it].day - d0).toFloat() / span * w - off.x) })
         }
     }) {
         if (points.isEmpty()) return@Canvas
-        val l = 36.dp.toPx(); val r = 14.dp.toPx(); val t = 14.dp.toPx(); val b = 20.dp.toPx()
+        val l = 36.dp.toPx(); val r = 14.dp.toPx(); val t = 16.dp.toPx(); val b = 20.dp.toPx()
         val w = size.width - l - r; val h = size.height - t - b
-        val lo = floor(minOf(points.minOf { it.kg }, goal1) - 1)
-        val hi = ceil(points.maxOf { it.kg } + 1)
-        val d0 = points.first().day; val span = maxOf(1L, points.last().day - d0)
+        val vals = points.map { it.v } + forecast.map { it.v } + yInclude
+        val lo = floor(vals.min() - 1); val hi = ceil(vals.max() + 1)
+        val d0 = points.first().day; val span = maxOf(1L, lastDay - d0)
         fun x(day: Long) = l + (day - d0).toFloat() / span * w
-        fun y(kg: Double) = t + ((hi - kg) / (hi - lo)).toFloat() * h
+        fun y(v: Double) = t + ((hi - v) / (hi - lo)).toFloat() * h
 
         val step = niceStep(hi - lo)
         var g = ceil(lo / step) * step
@@ -77,37 +90,60 @@ fun WeightChart(points: List<WPoint>, goal1: Double, goal2: Double, selected: In
             label(tm, if (step < 1) kg(g) else g.toInt().toString(), l - 6.dp.toPx(), y(g) - 6.dp.toPx(), cs.onSurfaceVariant, 1f)
             g += step
         }
-        // 월 경계
+        // 월 경계 (기간이 길면 한 달 걸러 표시)
+        val every = if (span > 240) 2 else 1
         var m = LocalDate.ofEpochDay(d0).withDayOfMonth(1).plusMonths(1)
-        while (m.toEpochDay() <= points.last().day) {
+        var k = 0
+        while (m.toEpochDay() <= lastDay) {
             val mx = x(m.toEpochDay())
             drawLine(cs.outlineVariant, Offset(mx, t + h), Offset(mx, t + h + 4.dp.toPx()), 2f)
-            label(tm, "${m.monthValue}월", mx, t + h + 5.dp.toPx(), cs.onSurfaceVariant, 0.5f)
-            m = m.plusMonths(1)
+            if (k % every == 0) label(tm, if (m.monthValue == 1) "${m.year % 100}년 1월" else "${m.monthValue}월", mx, t + h + 5.dp.toPx(), cs.onSurfaceVariant, 0.5f)
+            m = m.plusMonths(1); k++
         }
-        for ((goal, c) in listOf(goal1 to cs.secondary, goal2 to cs.tertiary)) {
-            if (goal < lo || goal > hi) continue
-            drawLine(c, Offset(l, y(goal)), Offset(l + w, y(goal)), 2f, pathEffect = DASH)
-            label(tm, "목표 ${kg(goal)}", l + 4.dp.toPx(), y(goal) - 14.dp.toPx(), c, 0f, bold = true)
+        for (ref in refs) {
+            if (ref.v < lo || ref.v > hi) continue
+            drawLine(ref.color, Offset(l, y(ref.v)), Offset(l + w, y(ref.v)), 2f, pathEffect = DASH)
+            label(tm, ref.label, l + 4.dp.toPx(), y(ref.v) - 14.dp.toPx(), ref.color, 0f, bold = true)
         }
         if (points.size > 1) {
             val path = Path().apply {
-                moveTo(x(points[0].day), y(points[0].kg))
-                points.drop(1).forEach { lineTo(x(it.day), y(it.kg)) }
+                moveTo(x(points[0].day), y(points[0].v))
+                points.drop(1).forEach { lineTo(x(it.day), y(it.v)) }
             }
             drawPath(path, cs.primary, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
+        val lp = points.last()
+        // 예상 구간
+        if (forecast.isNotEmpty()) {
+            val path = Path().apply {
+                moveTo(x(lp.day), y(lp.v))
+                forecast.forEach { lineTo(x(it.day), y(it.v)) }
+            }
+            drawPath(path, cs.secondary, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 12f))))
+            forecast.forEachIndexed { i, f ->
+                val c = Offset(x(f.day), y(f.v))
+                drawCircle(cs.surfaceContainerLow, 7.dp.toPx(), c)
+                drawCircle(cs.secondary, 5.dp.toPx(), c)
+                // 내려가는 점선과 겹치지 않게: 중간 지점은 오른쪽 위, 마지막 지점은 왼쪽 아래
+                if (i < forecast.lastIndex) label(tm, f.label, c.x - 2.dp.toPx(), c.y - 26.dp.toPx(), cs.secondary, 0f, bold = true, sp = 12)
+                else label(tm, f.label, c.x + 6.dp.toPx(), c.y + 9.dp.toPx(), cs.secondary, 1f, bold = true, sp = 12)
+            }
+        }
         points.forEachIndexed { i, p ->
-            val c = Offset(x(p.day), y(p.kg)); val last = i == points.lastIndex
+            val c = Offset(x(p.day), y(p.v)); val last = i == points.lastIndex
             if (i == selected) drawLine(cs.outline, Offset(c.x, t), Offset(c.x, t + h), 1.5f, pathEffect = DASH)
             drawCircle(cs.surfaceContainerLow, (if (last) 7 else 5).dp.toPx(), c)
-            // 인바디 = 채운 점, 집 체중계 = 테두리 점
-            if (p.device == DEV_INBODY) drawCircle(cs.primary, (if (last) 5.5f else 3.5f).dp.toPx(), c)
+            if (!p.hollow) drawCircle(cs.primary, (if (last) 5.5f else 3.5f).dp.toPx(), c)
             else drawCircle(cs.primary, (if (last) 5f else 3.2f).dp.toPx(), c, style = Stroke(2.dp.toPx()))
             if (i == selected) drawCircle(cs.primary, 9.dp.toPx(), c, style = Stroke(1.5.dp.toPx()))
         }
-        val lp = points.last()
-        label(tm, kg(lp.kg), x(lp.day) + 8.dp.toPx(), y(lp.kg) - 22.dp.toPx(), cs.primary, 1f, bold = true, sp = 13)
+        // 최신값 글자는 선과 겹치지 않는 쪽(내려오는 추세면 점 아래)에 둔다
+        val falling = points.size < 2 || points[points.size - 2].v >= lp.v
+        val below = falling && y(lp.v) + 26.dp.toPx() < t + h
+        val right = forecast.isEmpty()
+        label(tm, kg(lp.v), x(lp.day) + (if (right) 8 else -4).dp.toPx(), y(lp.v) + (if (below) 8 else -24).dp.toPx(),
+            cs.primary, if (right) 1f else 1f, bold = true, sp = 13)
     }
 }
 
@@ -152,9 +188,12 @@ fun SleepBarChart(firstDay: Long, minutes: List<Int?>, targetMin: Int, modifier:
     val tm = rememberTextMeasurer()
     val cs = MaterialTheme.colorScheme
     Canvas(modifier) {
-        val l = 28.dp.toPx(); val r = 6.dp.toPx(); val t = 12.dp.toPx(); val b = 18.dp.toPx()
+        // 막대 위 숫자: 7일 이하 = "5시간 / 39분" 두 줄, 14일 이하 = "5:39", 그보다 많으면 생략
+        val twoLine = minutes.size <= 7; val oneLine = !twoLine && minutes.size <= 14
+        val l = 28.dp.toPx(); val r = 6.dp.toPx(); val b = 18.dp.toPx()
+        val t = (if (twoLine) 34 else if (oneLine) 22 else 12).dp.toPx()
         val w = size.width - l - r; val h = size.height - t - b
-        val hiH = ceil((maxOf(targetMin, minutes.maxOfOrNull { it ?: 0 } ?: 0) + 30) / 120.0).toInt() * 2
+        val hiH = ceil((maxOf(targetMin, minutes.maxOfOrNull { it ?: 0 } ?: 0) + 1) / 120.0).toInt() * 2
         fun y(min: Int) = t + (1 - min / (hiH * 60f)) * h
         for (hr in 0..hiH step 2) {
             drawLine(cs.outlineVariant, Offset(l, y(hr * 60)), Offset(l + w, y(hr * 60)), 1f)
@@ -170,6 +209,14 @@ fun SleepBarChart(firstDay: Long, minutes: List<Int?>, targetMin: Int, modifier:
                 Offset(cx - bw / 2, y(m)), Size(bw, t + h - y(m)), rad)
         }
         drawLine(cs.tertiary, Offset(l, y(targetMin)), Offset(l + w, y(targetMin)), 2f, pathEffect = DASH)
+        minutes.forEachIndexed { i, m ->
+            if (m == null) return@forEachIndexed
+            val cx = l + slot * (i + 0.5f)
+            if (twoLine) {
+                label(tm, "${m / 60}시간", cx, y(m) - 28.dp.toPx(), cs.onSurface, 0.5f, bold = true, bg = cs.surfaceContainerLow)
+                label(tm, "${m % 60}분", cx, y(m) - 15.dp.toPx(), cs.onSurface, 0.5f, bold = true, bg = cs.surfaceContainerLow)
+            } else if (oneLine) label(tm, "%d:%02d".format(m / 60, m % 60), cx, y(m) - 15.dp.toPx(), cs.onSurface, 0.5f, bold = true, sp = 9, bg = cs.surfaceContainerLow)
+        }
         label(tm, dayMd(firstDay).replace('-', '/'), l, t + h + 4.dp.toPx(), cs.onSurfaceVariant)
         label(tm, dayMd(firstDay + minutes.size - 1).replace('-', '/'), l + w, t + h + 4.dp.toPx(), cs.onSurfaceVariant, 1f)
     }

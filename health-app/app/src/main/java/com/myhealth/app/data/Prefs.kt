@@ -17,7 +17,10 @@ data class Settings(
     val targetSleepMin: Int = 420,
     val goal1: Double = 89.0,
     val goal2: Double = 82.0,
+    val heightCm: Double = 181.0,
 ) {
+    fun bmi(kg: Double): Double = kg / ((heightCm / 100) * (heightCm / 100))
+
     val detect: DetectParams get() = DetectParams(minSleepMin, shortUseMin, mergeGapMin, latencyMin)
 
     /** 탐색 구간 길이(분) */
@@ -37,6 +40,7 @@ class Prefs private constructor(private val sp: SharedPreferences) {
             sp.getInt("targetSleepMin", d.targetSleepMin),
             sp.getFloat("goal1", d.goal1.toFloat()).toDouble().round1(),
             sp.getFloat("goal2", d.goal2.toFloat()).toDouble().round1(),
+            sp.getFloat("heightCm", d.heightCm.toFloat()).toDouble().round1(),
         )
     }
 
@@ -47,6 +51,7 @@ class Prefs private constructor(private val sp: SharedPreferences) {
             .putInt("mergeGapMin", s.mergeGapMin).putInt("latencyMin", s.latencyMin)
             .putInt("targetSleepMin", s.targetSleepMin)
             .putFloat("goal1", s.goal1.toFloat()).putFloat("goal2", s.goal2.toFloat())
+            .putFloat("heightCm", s.heightCm.toFloat())
             .apply()
         state.value = s
     }

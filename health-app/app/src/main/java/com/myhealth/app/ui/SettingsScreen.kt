@@ -108,6 +108,7 @@ fun SettingsScreen(vm: AppViewModel) {
             Item("목표 수면시간", dur(st.targetSleepMin)) { edit = int("목표 수면시간", "분", st.targetSleepMin, 180..720) { st.copy(targetSleepMin = it) } }
             Item("1차 목표 체중", "${kg(st.goal1)} kg") { edit = Edit.Num("1차 목표 체중", "kg", st.goal1, 30.0..200.0, false) { st.copy(goal1 = it.round1()) } }
             Item("2차 목표 체중", "${kg(st.goal2)} kg") { edit = Edit.Num("2차 목표 체중", "kg", st.goal2, 30.0..200.0, false) { st.copy(goal2 = it.round1()) } }
+            Item("키", "${kg(st.heightCm)} cm · BMI 계산에 사용") { edit = Edit.Num("키", "cm", st.heightCm, 100.0..230.0, false) { st.copy(heightCm = it.round1()) } }
         }
 
         SectionCard("내보내기·백업") {
