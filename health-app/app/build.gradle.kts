@@ -15,8 +15,8 @@ android {
         applicationId = "com.myhealth.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     signingConfigs {
@@ -60,6 +60,10 @@ android {
             it.maxHeapSize = "2g"
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 val androidAll: Configuration by configurations.creating

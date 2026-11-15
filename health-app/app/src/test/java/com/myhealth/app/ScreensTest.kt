@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.content.Context
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -53,6 +54,30 @@ class ScreensTest {
         }
     }
 
+    /** 기획안 4-3 예시와 같은 밤 + 태그 비교용 과거 10밤 */
+    private fun seedSnore() = runBlocking {
+        val dao = AppDb.get(ApplicationProvider.getApplicationContext<Context>()).snore()
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        for (n in 10 downTo 0) {
+            val end = today.minusDays(n.toLong()).atTime(7, 0).atZone(zone).toInstant().toEpochMilli()
+            val start = end - 7 * 3_600_000L
+            val drink = n % 2 == 1
+            val id = dao.putSession(com.myhealth.app.data.SnoreSession(0, today.minusDays(n.toLong()).toEpochDay(), start, start, end,
+                -58.0, true, if (drink) "음주" else if (n == 0) "운동" else ""))
+            val k = if (n == 0) 1 else if (drink) 2 else 1
+            // 조용 30분, 보통 15분, 큼 3분을 1분짜리 구간으로
+            var t = start + 40 * 60_000L
+            listOf(Triple(30, 1, 14.0), Triple(15 * k, 2, 24.0), Triple(3, 3, 33.0)).forEach { (count, inten, db) ->
+                repeat(count) {
+                    dao.putEvent(com.myhealth.app.data.SnoreEvent(0, id, t, t + 60_000, inten, db, db + 4, 0.8,
+                        if (n == 0 && it < 2) "/nonexistent/clip.wav" else null))
+                    t += 5 * 60_000L
+                }
+            }
+        }
+    }
+
     @Test fun allTabsRender() {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
         rule.waitUntil(10_000) { rule.onAllNodesWithText("98.0", substring = true).fetchSemanticsNodes().isNotEmpty() }
@@ -68,6 +93,12 @@ class ScreensTest {
         shot("2-today")
 
         rule.onNodeWithText("수면").performClick(); shot("3-sleep-log")
+        seedSnore()
+        rule.onNodeWithText("코골이").performClick()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText("Snore Score").fetchSemanticsNodes().isNotEmpty() }
+        // 기획안 예시: 7시간, 조용 30분 + 보통 15분 + 큼 3분 → 9.9
+        rule.onAllNodesWithText("9.9").onFirst().assertExists()
+        shot("3b-snore")
         rule.onNodeWithText("분석").performClick(); shot("4-analysis")
         rule.onNodeWithText("체중").performClick(); shot("5-weight")
         rule.onNodeWithText("장기 기록 (삼성 헬스 캡처)").performScrollTo(); shot("6-weight-archive")

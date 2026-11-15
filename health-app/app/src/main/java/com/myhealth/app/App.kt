@@ -12,6 +12,9 @@ import com.myhealth.app.data.SRC_AUTO
 import com.myhealth.app.data.SRC_MANUAL
 import com.myhealth.app.data.Settings
 import com.myhealth.app.data.SleepRec
+import com.myhealth.app.data.SnoreEvent
+import com.myhealth.app.data.SnoreSession
+import com.myhealth.app.snore.SnoreService
 import com.myhealth.app.data.WeightRec
 import com.myhealth.app.widget.HealthWidget
 import kotlinx.coroutines.Dispatchers
@@ -44,11 +47,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val sleeps = db.sleep().all().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val weights = db.weight().all().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val archive = db.archive().all().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val snoreSessions = db.snore().sessions().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val snoreEvents = db.snore().events().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val snoreRunning = SnoreService.running
     val hasPermission = MutableStateFlow(Collector.hasPermission(app))
     val message = MutableStateFlow<String?>(null)
 
     init {
         viewModelScope.launch(Dispatchers.IO) { Backup.seedIfNeeded(app) }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { SnoreService.closeOrphans(app); SnoreService.cleanOldClips(app) }
+        }
         // 수면·체중·설정이 바뀌면 홈 화면 위젯도 바로 갱신
         viewModelScope.launch(Dispatchers.IO) {
             combine(sleeps, weights, settings) { _, _, _ -> }.collect { runCatching { HealthWidget.render(app) } }
@@ -99,6 +108,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteWeight(id: Long) = viewModelScope.launch(Dispatchers.IO) { db.weight().remove(id) }
+
+    fun setSnoreLabel(e: SnoreEvent, label: Int?) = viewModelScope.launch(Dispatchers.IO) { db.snore().setLabel(e.id, label) }
+
+    fun toggleSnoreTag(s: SnoreSession, tag: String) = viewModelScope.launch(Dispatchers.IO) {
+        val tags = if (tag in s.tagList) s.tagList - tag else s.tagList + tag
+        db.snore().setTags(s.id, tags.joinToString(","))
+    }
+
+    fun deleteSnore(s: SnoreSession) = viewModelScope.launch(Dispatchers.IO) {
+        db.snore().eventsOf(s.id).forEach { e -> e.clipPath?.let { java.io.File(it).delete() } }
+        db.snore().removeEvents(s.id)
+        db.snore().removeSession(s.id)
+    }
 
     fun restore(text: String) = viewModelScope.launch(Dispatchers.IO) {
         message.value = runCatching { "${Backup.importJson(getApplication(), text)}건을 복원했습니다" }

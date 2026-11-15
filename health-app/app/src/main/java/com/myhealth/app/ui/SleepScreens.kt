@@ -131,8 +131,22 @@ fun TodayScreen(vm: AppViewModel, onTab: (Int) -> Unit) {
                     Modifier.fillMaxWidth().height(110.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onTab(1) }) { Text("기록 보기") }
+                OutlinedButton(onClick = { onTab(TAB_SLEEP) }) { Text("기록 보기") }
                 if (perm) TextButton(onClick = { vm.collectNow() }) { Text("지금 다시 수집") }
+            }
+        }
+
+        // 오늘 아침에 끝난 코골이 측정이 있으면 요약 표시
+        val snoreSessions by vm.snoreSessions.collectAsStateWithLifecycle()
+        val snoreEvents by vm.snoreEvents.collectAsStateWithLifecycle()
+        snoreSessions.firstOrNull { !it.running && it.day == today }?.let { s ->
+            val sn = snoreStats(s, snoreEvents)
+            SectionCard("어젯밤 코골이") {
+                Row(Modifier.fillMaxWidth()) {
+                    Stat("Snore Score", "%.1f".format(sn.score), Modifier.weight(1f))
+                    Stat("코골이 시간", dur((sn.snoreSec / 60).toInt()), Modifier.weight(1f), "측정의 ${"%.0f".format(sn.pct)}%")
+                }
+                OutlinedButton(onClick = { onTab(TAB_SNORE) }) { Text("리포트 보기") }
             }
         }
 
@@ -155,7 +169,7 @@ fun TodayScreen(vm: AppViewModel, onTab: (Int) -> Unit) {
                     Stat("예상 도달일", sc.goal1Day?.let { dayIso(it).substring(2).replace('-', '.') } ?: "—", Modifier.weight(1f))
                 }
             }
-            FilledTonalButton(onClick = { onTab(3) }) { Text("체중 기록·추이 보기") }
+            FilledTonalButton(onClick = { onTab(TAB_WEIGHT) }) { Text("체중 기록·추이 보기") }
         }
     }
 }

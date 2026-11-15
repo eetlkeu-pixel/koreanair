@@ -46,6 +46,21 @@ object Backup {
                     .put("min", it.min ?: JSONObject.NULL).put("max", it.max ?: JSONObject.NULL))
             }
         })
+        root.put("snoreSessions", JSONArray().also { a ->
+            db.snore().sessionList().filter { !it.running }.forEach {
+                a.put(JSONObject().put("id", it.id).put("day", it.day).put("startAt", it.startAt)
+                    .put("measureFrom", it.measureFrom).put("endAt", it.endAt)
+                    .put("baselineDb", it.baselineDb ?: JSONObject.NULL).put("charging", it.charging)
+                    .put("tags", it.tags).put("interrupted", it.interrupted).put("apneaLike", it.apneaLike))
+            }
+        })
+        root.put("snoreEvents", JSONArray().also { a ->
+            db.snore().eventList().forEach {
+                a.put(JSONObject().put("sessionId", it.sessionId).put("startAt", it.startAt).put("endAt", it.endAt)
+                    .put("intensity", it.intensity).put("meanDb", it.meanDb).put("peakDb", it.peakDb)
+                    .put("confidence", it.confidence).put("label", it.label ?: JSONObject.NULL))
+            }
+        })
         return root.toString(2)
     }
 
@@ -88,6 +103,28 @@ object Backup {
                 db.archive().put(ArchiveRec(o.getString("label"), i, o.optString("short", o.getString("label")),
                     o.getDouble("avg"), o.optD("min"), o.optD("max")))
                 n++
+            }
+        }
+        // 코골이: 같은 시작 시각의 밤이 이미 있으면 건너뛴다 (샘플 음성은 백업 대상이 아님)
+        val have = db.snore().sessionList().map { it.startAt }.toSet()
+        val idMap = HashMap<Long, Long>()
+        root.optJSONArray("snoreSessions")?.let { a ->
+            for (i in 0 until a.length()) {
+                val o = a.getJSONObject(i)
+                if (o.getLong("startAt") in have) continue
+                idMap[o.getLong("id")] = db.snore().putSession(SnoreSession(0, o.getLong("day"), o.getLong("startAt"),
+                    o.getLong("measureFrom"), o.getLong("endAt"), o.optD("baselineDb"), o.optBoolean("charging"),
+                    o.optString("tags", ""), false, o.optBoolean("interrupted"), o.optInt("apneaLike")))
+                n++
+            }
+        }
+        root.optJSONArray("snoreEvents")?.let { a ->
+            for (i in 0 until a.length()) {
+                val o = a.getJSONObject(i)
+                val sid = idMap[o.getLong("sessionId")] ?: continue
+                db.snore().putEvent(SnoreEvent(0, sid, o.getLong("startAt"), o.getLong("endAt"), o.getInt("intensity"),
+                    o.getDouble("meanDb"), o.getDouble("peakDb"), o.getDouble("confidence"), null,
+                    if (o.isNull("label")) null else o.getInt("label")))
             }
         }
         return n

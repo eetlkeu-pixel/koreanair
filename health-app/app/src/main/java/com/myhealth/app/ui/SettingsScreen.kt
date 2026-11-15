@@ -111,6 +111,11 @@ fun SettingsScreen(vm: AppViewModel) {
             Item("키", "${kg(st.heightCm)} cm · BMI 계산에 사용") { edit = Edit.Num("키", "cm", st.heightCm, 100.0..230.0, false) { st.copy(heightCm = it.round1()) } }
         }
 
+        SectionCard("코골이 측정") {
+            Muted(SNORE_DISCLAIMER)
+            Muted("소리는 휴대폰 안에서만 분석합니다. 전체 녹음은 저장하지 않고, 코골이 샘플(10초)만 밤마다 최대 20개 남기며 30일 뒤 자동 삭제합니다. 수치 기록은 계속 남습니다.")
+        }
+
         SectionCard("내보내기·백업") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { pending = { "﻿" + Backup.sleepCsv(ctx) }; csvSaver.launch("sleep.csv") }, modifier = Modifier.weight(1f)) { Text("수면 CSV") }
@@ -120,7 +125,7 @@ fun SettingsScreen(vm: AppViewModel) {
                 OutlinedButton(onClick = { pending = { Backup.exportJson(ctx) }; jsonSaver.launch("my-health-backup.json") }, modifier = Modifier.weight(1f)) { Text("전체 백업") }
                 OutlinedButton(onClick = { opener.launch(arrayOf("application/json", "text/*", "application/octet-stream")) }, modifier = Modifier.weight(1f)) { Text("백업 복원") }
             }
-            Muted("모든 데이터는 이 휴대폰 안에만 저장됩니다(인터넷 권한 없음). 앱을 지우거나 폰을 바꾸기 전에 ‘전체 백업’ 파일을 만들어 두세요.")
+            Muted("모든 데이터는 이 휴대폰 안에만 저장됩니다(인터넷 권한 없음). 앱을 지우거나 폰을 바꾸기 전에 ‘전체 백업’ 파일을 만들어 두세요. 코골이 샘플 음성은 백업에 포함되지 않습니다.")
         }
     }
 

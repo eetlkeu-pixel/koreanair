@@ -32,11 +32,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { AppTheme { AppRoot() } }
+        val tab = intent?.getIntExtra("tab", 0) ?: 0
+        setContent { AppTheme { AppRoot(startTab = tab) } }
     }
 }
 
-private val TABS = listOf("☀️" to "오늘", "🌙" to "수면", "📊" to "분석", "⚖️" to "체중", "⚙️" to "설정")
+private val TABS = listOf("☀️" to "오늘", "🌙" to "수면", "😴" to "코골이", "📊" to "분석", "⚖️" to "체중", "⚙️" to "설정")
+const val TAB_SLEEP = 1
+const val TAB_SNORE = 2
+const val TAB_WEIGHT = 4
 
 @Composable
 fun AppRoot(vm: AppViewModel = viewModel(), startTab: Int = 0) {
@@ -56,7 +60,7 @@ fun AppRoot(vm: AppViewModel = viewModel(), startTab: Int = 0) {
                 TABS.forEachIndexed { i, (icon, label) ->
                     NavigationBarItem(
                         selected = tab == i, onClick = { tab = i },
-                        icon = { Text(icon, fontSize = 20.sp) }, label = { Text(label) },
+                        icon = { Text(icon, fontSize = 20.sp) }, label = { Text(label, maxLines = 1, softWrap = false) },
                     )
                 }
             }
@@ -66,8 +70,9 @@ fun AppRoot(vm: AppViewModel = viewModel(), startTab: Int = 0) {
             when (tab) {
                 0 -> TodayScreen(vm, onTab = { tab = it })
                 1 -> SleepLogScreen(vm)
-                2 -> AnalysisScreen(vm)
-                3 -> WeightScreen(vm)
+                2 -> SnoreScreen(vm)
+                3 -> AnalysisScreen(vm)
+                4 -> WeightScreen(vm)
                 else -> SettingsScreen(vm)
             }
         }

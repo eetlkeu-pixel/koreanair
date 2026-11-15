@@ -7,6 +7,13 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- 코골이 측정: 밤새 마이크로 듣는 foreground service. 녹음은 기기 밖으로 나가지 않음(인터넷 권한 없음) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -23,6 +30,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".snore.SnoreService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
         <receiver android:name=".widget.HealthWidget" android:exported="true" android:label="나의 건강">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
