@@ -11,8 +11,8 @@ android {
         applicationId = "com.me.fonttoggle"
         minSdk = 29
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
     }
 
     // 고정 서명 키: 새 버전을 지우지 않고 덮어 설치할 수 있게

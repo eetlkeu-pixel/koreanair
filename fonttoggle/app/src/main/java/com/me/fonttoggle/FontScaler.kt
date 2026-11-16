@@ -35,6 +35,17 @@ object FontScaler {
     fun saveSmall(ctx: Context, v: Float) =
         ctx.getSharedPreferences(PREFS, 0).edit().putFloat(KEY_SMALL, v).apply()
 
+    // 텔레그램 동기화 설정
+    fun tgEnabled(ctx: Context) = ctx.getSharedPreferences(PREFS, 0).getBoolean("tg_on", false)
+    fun setTgEnabled(ctx: Context, v: Boolean) =
+        ctx.getSharedPreferences(PREFS, 0).edit().putBoolean("tg_on", v).apply()
+    fun tgLarge(ctx: Context) = ctx.getSharedPreferences(PREFS, 0).getInt("tg_large", 30)
+    fun tgSmall(ctx: Context) = ctx.getSharedPreferences(PREFS, 0).getInt("tg_small", 16)
+    fun saveTgLarge(ctx: Context, v: Int) =
+        ctx.getSharedPreferences(PREFS, 0).edit().putInt("tg_large", v.coerceIn(12, 30)).apply()
+    fun saveTgSmall(ctx: Context, v: Int) =
+        ctx.getSharedPreferences(PREFS, 0).edit().putInt("tg_small", v.coerceIn(12, 30)).apply()
+
     fun isLarge(ctx: Context): Boolean = abs(current(ctx) - large(ctx)) < 0.01f
 
     fun canWrite(ctx: Context): Boolean = Settings.System.canWrite(ctx)
@@ -57,8 +68,11 @@ object FontScaler {
         val now = android.os.SystemClock.elapsedRealtime()
         if (now - lastToggleAt in 0..1500) return true
         lastToggleAt = now
-        val target = if (isLarge(ctx)) small(ctx) else large(ctx)
-        return set(ctx, target)
+        val goingLarge = !isLarge(ctx)
+        val target = if (goingLarge) large(ctx) else small(ctx)
+        val ok = set(ctx, target)
+        if (ok) TgSyncService.sync(ctx, goingLarge)
+        return ok
     }
 
     fun set(ctx: Context, value: Float): Boolean {

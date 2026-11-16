@@ -80,6 +80,58 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="④ 텔레그램도 같이 바꾸기"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="텔레그램은 휴대폰 글자 크기를 따르지 않아서, 토글할 때 텔레그램 채팅 설정을 잠깐 열어 메시지 글자 크기를 바꾼 뒤 원래 화면으로 돌아옵니다.\n1) 아래 체크\n2) 앱 정보 열기 › 오른쪽 위 ⋮ › 제한된 설정 허용 (메뉴가 없으면 건너뛰기)\n3) 접근성 설정 열기 › 설치된 앱 › 글자토글 켜기"
+            android:textSize="13sp" />
+
+        <CheckBox
+            android:id="@+id/tg_check"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="텔레그램 글자 크기도 같이 바꾸기" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btn_appinfo" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="앱 정보 열기" />
+            <Button android:id="@+id/btn_a11y" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="접근성 설정 열기" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tg_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btn_tg_large_minus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="텔큰 −" />
+            <Button android:id="@+id/btn_tg_large_plus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="텔큰 +" />
+            <Button android:id="@+id/btn_tg_small_minus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="텔작 −" />
+            <Button android:id="@+id/btn_tg_small_plus" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:text="텔작 +" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="③ 쓰는 법\n· 홈 아이콘 '글자토글'을 누르면 바로 바뀝니다.\n· 상단바를 내리고 연필(편집) 버튼 › '글자 크기' 타일을 추가하면 어디서든 누를 수 있어요.\n· 홈 화면 위젯도 있어요.\n\n변경이 막힐 때(일부 기기): PC에서\nadb shell pm grant com.me.fonttoggle android.permission.WRITE_SECURE_SETTINGS"
             android:textIsSelectable="true"
