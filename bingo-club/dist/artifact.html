@@ -1,0 +1,262 @@
+<title>빙고 투자모임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 한 단 읽기 폭(680px), 상단 고정 탭, 회차 번호는 빙고 공 모양 */
+:root {
+  --bg: #f1f4f9; --surface: #ffffff; --ink: #141b2d; --muted: #5a6479;
+  --line: #d9dfea; --accent: #d3243f; --accent-ink: #ffffff; --link: #2452d6;
+  --soft: #e7ecf5; --next: #fff1f3;
+  --display: "Do Hyeon", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1422; --surface: #172033; --ink: #e9edf6; --muted: #98a3ba;
+  --line: #2a3550; --accent: #ff6278; --accent-ink: #1a0a0e; --link: #8fb0ff;
+  --soft: #202b43; --next: #2c1c28; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1422; --surface: #172033; --ink: #e9edf6; --muted: #98a3ba;
+  --line: #2a3550; --accent: #ff6278; --accent-ink: #1a0a0e; --link: #8fb0ff;
+  --soft: #202b43; --next: #2c1c28; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 16px/1.7 var(--body); word-break: keep-all; overflow-wrap: anywhere }
+a { color: var(--link) }
+h1, h2, h3, p, ul, ol { margin: 0 }
+button, input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px }
+.wrap { max-width: 680px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.ball { display: inline-grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--soft); font: 600 0.95rem var(--mono); font-variant-numeric: tabular-nums }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.1rem; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none; cursor: pointer }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line) }
+.btn[disabled] { opacity: .6; cursor: progress }
+
+/* 잠금 화면 */
+#lock { padding-block: 12vh 3rem }
+#lock .card { max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem }
+.bingo { display: flex; gap: .5rem }
+.bingo .ball { background: var(--accent); color: var(--accent-ink); font: 1.25rem var(--display) }
+#lock h1 { font: 2.25rem/1.2 var(--display) }
+#lock p { color: var(--muted) }
+#lock form { display: flex; flex-direction: column; gap: .75rem }
+#lock label { font-size: .875rem; font-weight: 600 }
+#code { width: 100%; min-height: 3rem; padding: 0 .9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font: 600 1rem var(--mono); letter-spacing: .04em; text-transform: uppercase }
+.keep { display: flex; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 400; color: var(--muted) }
+#err { color: var(--accent); font-size: .9rem; min-height: 1.5em }
+
+/* 본문 */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line) }
+header .wrap { display: flex; flex-direction: column; gap: .5rem; padding-block: .9rem 0 }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 1rem }
+.top h1 { font: 1.5rem/1.2 var(--display) }
+.top button { background: none; border: 0; color: var(--muted); font-size: .875rem; cursor: pointer; padding: .4rem 0 }
+nav { display: flex; gap: 1.25rem; overflow-x: auto }
+nav a { flex: none; padding: .5rem 0 .6rem; color: var(--muted); text-decoration: none; font-weight: 600; border-bottom: 3px solid transparent }
+nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent) }
+main { padding-block: 1.75rem 4rem; display: flex; flex-direction: column; gap: 2.25rem }
+section { display: flex; flex-direction: column; gap: .9rem; min-width: 0 }
+h2 { font: 1.375rem/1.3 var(--display); text-wrap: balance }
+h3 { font-size: 1rem; font-weight: 600 }
+.eyebrow { font-size: .8125rem; font-weight: 600; color: var(--accent); letter-spacing: .02em }
+.muted { color: var(--muted) }
+.prose { display: flex; flex-direction: column; gap: .7rem }
+.prose ul { padding-left: 1.2rem; display: flex; flex-direction: column; gap: .2rem }
+
+.next { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem }
+.next .head { display: flex; align-items: center; gap: .9rem }
+.next .ball { width: 3.25rem; height: 3.25rem; font-size: 1.25rem; background: var(--accent); color: var(--accent-ink) }
+.next .date { font: 1.75rem/1.2 var(--display) }
+dl { margin: 0; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: .45rem .75rem }
+dt { color: var(--muted); font-size: .875rem; padding-top: .1rem }
+dd { margin: 0 }
+.row { display: flex; flex-wrap: wrap; gap: .6rem }
+
+.notice { border-top: 1px solid var(--line); padding-top: .9rem; display: flex; flex-direction: column; gap: .35rem }
+.tl { list-style: none; padding: 0; display: flex; flex-direction: column }
+.tl li { display: grid; grid-template-columns: 7.25rem minmax(0, 1fr); gap: .75rem; padding: .55rem 0; border-top: 1px solid var(--line) }
+.tl time { font: 500 .875rem/1.9 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted) }
+.tl .break { color: var(--muted) }
+.tl .main { font-weight: 600 }
+
+.book { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: .4rem }
+.book .title { font: 2rem/1.25 var(--display); text-wrap: balance }
+
+.q { display: flex; flex-direction: column }
+.q h3 { color: var(--muted); font-size: .875rem; padding-bottom: .4rem }
+.s { display: grid; grid-template-columns: 2.5rem 4.25rem minmax(0, 1fr); gap: .75rem; align-items: center; padding: .6rem .5rem; border-top: 1px solid var(--line) }
+.s .d { font: 500 .9rem var(--mono); font-variant-numeric: tabular-nums }
+.s .d small { display: block; font: .75rem var(--body); color: var(--muted) }
+.s .w { display: flex; flex-wrap: wrap; gap: .15rem .7rem; align-items: baseline }
+.s .n { font-size: .8125rem; color: var(--muted); flex-basis: 100% }
+.s.past { opacity: .55 }
+.s.now { background: var(--next); border-radius: 8px; border-top-color: transparent }
+.s.now .ball { background: var(--accent); color: var(--accent-ink) }
+.s.now + .s { border-top-color: transparent }
+.rule { border-top: 1px solid var(--line); padding-top: 1rem; display: flex; flex-direction: column; gap: .6rem }
+</style>
+
+<div id="lock" class="wrap">
+  <div class="card">
+    <div class="bingo" aria-hidden="true"><span class="ball">B</span><span class="ball">I</span><span class="ball">N</span><span class="ball">G</span><span class="ball">O</span></div>
+    <h1>빙고 투자모임</h1>
+    <p>모임원 전용 공간입니다. 받으신 초대코드를 입력하면 공지와 일정을 볼 수 있어요.</p>
+    <form id="form">
+      <label for="code">초대코드</label>
+      <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BINGO-XXXX-XXXX-XXXX" required>
+      <label class="keep" for="keep"><input type="checkbox" id="keep" checked> 이 기기에서 기억하기</label>
+      <button class="btn" id="go" type="submit">입장하기</button>
+      <div id="err" role="alert"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="wrap">
+      <div class="top"><h1 id="site"></h1><button type="button" id="out">잠그기</button></div>
+      <nav aria-label="메뉴">
+        <a href="#notice">전체공지</a><a href="#book">책공지</a><a href="#schedule">모임 일정</a><a href="#rules">운영공지</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap" id="view"></main>
+</div>
+
+<script>
+const PAYLOAD = {"v":1,"iter":600000,"slots":[{"salt":"L544iEsCp5jfXqm52t9kEg==","iv":"q+txjakWBpLf5wBi","key":"qi2aN3sWhMcIA3zIZH5gPCw50QNOxAZuEmK0a1NDM4tBxJEGIFbpI7S72ZJIEJp3"}],"iv":"e2lXLlQVotFhl1xK","ct":"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"};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const store = {
+  get() { try { return localStorage.getItem('bingo-code') } catch { return null } },
+  set(v) { try { v ? localStorage.setItem('bingo-code', v) : localStorage.removeItem('bingo-code') } catch {} },
+};
+let DATA = null;
+
+async function unlock(code) {
+  const pw = new TextEncoder().encode(code.toUpperCase().replace(/[\s-]/g, ''));
+  const base = await crypto.subtle.importKey('raw', pw, 'PBKDF2', false, ['deriveKey']);
+  for (const s of PAYLOAD.slots) {
+    try {
+      const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: unb64(s.salt), iterations: PAYLOAD.iter },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const raw = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(s.iv) }, k, unb64(s.key));
+      const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(PAYLOAD.iv) }, key, unb64(PAYLOAD.ct));
+      return JSON.parse(new TextDecoder().decode(pt));
+    } catch {}
+  }
+  return null;
+}
+
+// 본문: 빈 줄 = 문단, "- " = 목록, URL 자동 링크
+function prose(text) {
+  const link = (s) => esc(s).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  return '<div class="prose">' + text.split(/\n{2,}/).map((block) => {
+    const lines = block.split('\n');
+    const items = lines.filter((l) => l.startsWith('- '));
+    const rest = lines.filter((l) => !l.startsWith('- '));
+    return (rest.length ? `<p>${rest.map(link).join('<br>')}</p>` : '') +
+      (items.length ? `<ul>${items.map((l) => `<li>${link(l.slice(2))}</li>`).join('')}</ul>` : '');
+  }).join('') + '</div>';
+}
+
+const dateOf = (s) => { const [m, d] = s.date.split('-').map(Number); return new Date(DATA.year, m - 1, d) };
+const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t };
+const nextSession = () => DATA.sessions.find((s) => dateOf(s) >= today());
+const md = (s) => { const d = dateOf(s); return `${d.getMonth() + 1}월 ${d.getDate()}일` };
+
+const views = {
+  notice() {
+    const m = DATA.meeting, n = nextSession();
+    return `
+    <section>
+      <div class="next">
+        ${n ? `<div class="head"><span class="ball">${n.n}</span><div><div class="eyebrow">다음 모임 · ${n.n}회</div><div class="date">${md(n)} 일요일</div></div></div>` : `<div class="date">다음 일정은 곧 공지됩니다</div>`}
+        <dl>
+          <dt>시간</dt><dd>${esc(m.cadence)} ${esc(m.start)}~${esc(m.end)}</dd>
+          ${n ? `<dt>발표</dt><dd>${n.who.length ? n.who.map(esc).join(', ') : '발표 없음'}${n.note ? ` <span class="muted">· ${esc(n.note)}</span>` : ''}</dd>` : ''}
+          <dt>장소</dt><dd>${esc(m.address)}</dd>
+        </dl>
+        <div class="row">
+          <a class="btn" href="${esc(m.telegram)}" target="_blank" rel="noopener">텔레그램 대화방 입장</a>
+          <button class="btn ghost" type="button" id="copy">주소 복사</button>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>전체공지</h2>
+      ${DATA.notices.map((x) => `<article class="notice"><h3>${esc(x.title)}</h3>${prose(x.body)}</article>`).join('')}
+    </section>
+    <section>
+      <h2>모임 타임라인</h2>
+      <p class="muted">모임 진행시간 ${esc(m.start)}~${esc(m.end)}</p>
+      <ol class="tl">${m.timeline.map((t) => `<li><time>${t.from}–${t.to}</time><span class="${t.kind}">${esc(t.label)}</span></li>`).join('')}</ol>
+    </section>`;
+  },
+  book() {
+    const b = DATA.book;
+    const more = DATA.sessions.filter((s) => s.note && /연금술/.test(s.note));
+    return `
+    <section>
+      <h2>책공지</h2>
+      <div class="book"><div class="eyebrow">${esc(b.label)}</div><div class="title">${esc(b.title)}</div><div class="muted">${esc(b.author)}</div></div>
+    </section>
+    ${more.length ? `<section><h2>올해 함께 읽은 책</h2>${more.map((s) => `<div class="notice"><h3>${esc(s.note.split(' · ').pop())}</h3><p class="muted">${s.n}회 · ${md(s)}</p></div>`).join('')}</section>` : ''}`;
+  },
+  schedule() {
+    const n = nextSession(), t = today(), qs = {};
+    DATA.sessions.forEach((s) => { const q = Math.floor(dateOf(s).getMonth() / 3) + 1; (qs[q] ||= []).push(s) });
+    return `
+    <section>
+      <h2>${DATA.year}년 모임 일정</h2>
+      <p class="muted">${esc(DATA.meeting.cadence)} ${esc(DATA.meeting.start)}~${esc(DATA.meeting.end)} · 이름은 그날 발표자입니다.</p>
+    </section>
+    ${Object.entries(qs).map(([q, list]) => `<section class="q"><h3>${q}분기</h3>${list.map((s) => `
+      <div class="s ${s === n ? 'now' : dateOf(s) < t ? 'past' : ''}">
+        <span class="ball">${s.n}</span>
+        <span class="d">${s.date.replace('-', '/')}<small>${s === n ? '다음 모임' : '일요일'}</small></span>
+        <span class="w">${s.who.map((w) => `<span>${esc(w)}</span>`).join('')}${s.note ? `<span class="n">${esc(s.note)}</span>` : ''}</span>
+      </div>`).join('')}</section>`).join('')}`;
+  },
+  rules() {
+    return `
+    <section><h2>운영공지</h2><p class="muted">${esc(DATA.rulesIntro)}</p></section>
+    <section>${DATA.rules.map((r) => `<article class="rule"><h3>${esc(r.title)}</h3>${prose(r.body)}</article>`).join('')}</section>`;
+  },
+};
+
+function route() {
+  if (!DATA) return;
+  const name = views[location.hash.slice(1)] ? location.hash.slice(1) : 'notice';
+  document.querySelectorAll('nav a').forEach((a) => a.getAttribute('href') === '#' + name ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $('view').innerHTML = views[name]();
+  window.scrollTo(0, 0);
+  const copy = $('copy');
+  if (copy) copy.onclick = () => navigator.clipboard.writeText(DATA.meeting.address)
+    .then(() => { copy.textContent = '복사됨' }, () => { copy.textContent = '길게 눌러 복사해주세요' });
+}
+
+function enter(data) {
+  DATA = data;
+  $('site').textContent = data.siteName;
+  $('lock').hidden = true; $('app').hidden = false;
+  route();
+}
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = $('code').value.trim(), go = $('go');
+  $('err').textContent = ''; go.disabled = true; go.textContent = '확인 중…';
+  const data = await unlock(code).catch(() => null);
+  go.disabled = false; go.textContent = '입장하기';
+  if (!data) { $('err').textContent = '초대코드가 맞지 않습니다. 다시 확인해주세요.'; return }
+  store.set($('keep').checked ? code : null);
+  enter(data);
+});
+$('out').addEventListener('click', () => { store.set(null); DATA = null; $('view').innerHTML = ''; $('code').value = ''; $('app').hidden = true; $('lock').hidden = false });
+addEventListener('hashchange', route);
+(async () => { const saved = store.get(); if (saved) { const d = await unlock(saved).catch(() => null); if (d) enter(d) } })();
+</script>
