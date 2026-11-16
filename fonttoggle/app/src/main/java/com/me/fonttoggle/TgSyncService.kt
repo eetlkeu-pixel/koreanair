@@ -185,7 +185,7 @@ class TgSyncService : AccessibilityService() {
 
         /** 큰 글자로 바꿨으면 large=true */
         fun sync(ctx: Context, large: Boolean) {
-            if (!FontScaler.tgEnabled(ctx)) return
+            if (!BuildConfig.TG || !FontScaler.tgEnabled(ctx)) return
             val svc = instance
             if (svc == null) {
                 Toast.makeText(ctx.applicationContext,

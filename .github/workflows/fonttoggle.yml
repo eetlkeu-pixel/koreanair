@@ -23,13 +23,15 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon assembleBasicDebug assembleTgDebug
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk fonttoggle.apk
+        run: |
+          cp app/build/outputs/apk/basic/debug/app-basic-debug.apk fonttoggle.apk
+          cp app/build/outputs/apk/tg/debug/app-tg-debug.apk fonttoggle-telegram.apk
       - uses: actions/upload-artifact@v4
         with:
           name: fonttoggle-apk
-          path: fonttoggle/fonttoggle.apk
+          path: fonttoggle/*.apk
       - name: Publish to release (phone download)
         uses: softprops/action-gh-release@v2
         with:
@@ -37,7 +39,10 @@ jobs:
           name: 글자토글 APK (최신)
           target_commitish: ${{ github.sha }}
           prerelease: true
-          files: fonttoggle/fonttoggle.apk
+          files: |
+            fonttoggle/fonttoggle.apk
+            fonttoggle/fonttoggle-telegram.apk
           body: |
-            휴대폰에서 아래 fonttoggle.apk 를 눌러 내려받아 설치하세요.
+            fonttoggle.apk: 기본판 (텔레그램 동기화 없음, Play 프로텍트에 안 막힘)
+            fonttoggle-telegram.apk: 텔레그램 동기화 포함 (접근성 사용)
             빌드 커밋: ${{ github.sha }}

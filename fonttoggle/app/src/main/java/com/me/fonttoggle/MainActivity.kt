@@ -31,6 +31,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btn_large_plus).setOnClickListener { nudgeLarge(+0.1f) }
         findViewById<Button>(R.id.btn_small_minus).setOnClickListener { nudgeSmall(-0.1f) }
         findViewById<Button>(R.id.btn_small_plus).setOnClickListener { nudgeSmall(+0.1f) }
+        if (!BuildConfig.TG) findViewById<android.view.View>(R.id.tg_section).visibility = android.view.View.GONE
         tgCheck = findViewById(R.id.tg_check)
         tgStatus = findViewById(R.id.tg_status)
         tgCheck.setOnCheckedChangeListener { _, on -> FontScaler.setTgEnabled(this, on); refresh() }

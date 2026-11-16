@@ -77,6 +77,11 @@
             android:layout_marginTop="16dp"
             android:text="지금 토글해 보기" />
 
+        <LinearLayout
+            android:id="@+id/tg_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -127,6 +132,7 @@
                 android:layout_height="wrap_content" android:text="텔작 −" />
             <Button android:id="@+id/btn_tg_small_plus" android:layout_width="0dp" android:layout_weight="1"
                 android:layout_height="wrap_content" android:text="텔작 +" />
+        </LinearLayout>
         </LinearLayout>
 
         <TextView
