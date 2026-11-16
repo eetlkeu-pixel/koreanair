@@ -149,6 +149,11 @@ td.l{text-align:left;white-space:normal;min-width:180px}
     </div>
     <p class="small muted" id="chartNote">1.0배 선 위는 지주회사 한진칼의 시총이 자회사 대한항공보다 큰 구간이다. 2026년 11월 이후 점은 매일 장 마감 뒤 자동으로 추가된다.</p>
   </div>
+  <h3 id="h-daily" style="margin-top:24px">최근 일별 추이</h3>
+  <div class="panel">
+    <div class="chartbox"><canvas id="dailyChart" aria-label="최근 일별 시가총액 비율 추이"></canvas></div>
+    <p class="small muted" id="dailyNote">2026년 11월부터 매일 KRX 종가로 계산한 비율. 장 마감 뒤 자동으로 한 점씩 늘어난다.</p>
+  </div>
 </section>
 
 <section aria-labelledby="h-calc">
@@ -324,8 +329,23 @@ const LIVE=[
   } else {
     document.getElementById('chartNote').textContent='차트를 불러오지 못했다. 아래 계산기와 조합표는 그대로 작동한다.';
   }
-  function paint(){if(!chart)return;const h=css('--amber'),m=css('--muted'),l=css('--line'),s=css('--surface');const d=chart.data.datasets[0];d.borderColor=h;d.pointBackgroundColor=h;d.pointBorderColor=s;
-    const sc=chart.options.scales;[sc.x,sc.y].forEach(a=>{a.ticks.color=m;a.grid.color=l;a.border={color:l};});chart.update();}
+  // 최근 일별 차트 (LIVE 전체, 날짜 축)
+  let daily=null;
+  if(window.Chart&&LV.length){
+    const ref1={id:'ref1',beforeDatasetsDraw(c){const {ctx,chartArea:a,scales:{y}}=c;const py=y.getPixelForValue(1);if(py<a.top||py>a.bottom)return;ctx.save();ctx.strokeStyle=css('--muted');ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(a.left,py);ctx.lineTo(a.right,py);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=css('--muted');ctx.font='11px '+css('--f-body');ctx.textAlign='right';ctx.fillText('시총 역전 1.0배',a.right-4,py+13);ctx.restore();}};
+    const lbl={id:'lbl',afterDatasetsDraw(c){if(LV.length>40)return;const {ctx}=c;const m=c.getDatasetMeta(0);ctx.save();ctx.fillStyle=css('--ink');ctx.font='11px '+css('--f-body');ctx.textAlign='center';m.data.forEach((pt,i)=>ctx.fillText(LV[i].r.toFixed(2),pt.x,pt.y-8));ctx.restore();}};
+    const rs=LV.map(p=>p.r);
+    daily=new Chart(document.getElementById('dailyChart'),{type:'line',plugins:[ref1,lbl],
+      data:{labels:LV.map(p=>p.d.slice(5)),datasets:[{label:'시총 비율',data:rs,borderWidth:2,tension:0,pointRadius:3,pointHoverRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},interaction:{mode:'index',intersect:false},layout:{padding:{right:16,top:6}},
+        scales:{x:{grid:{display:false},ticks:{autoSkip:true,maxRotation:0}},
+                y:{suggestedMin:Math.min(0.9,Math.min(...rs)-0.05),suggestedMax:Math.max(...rs)+0.08,ticks:{callback:v=>(+v).toFixed(1)+'배'}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:i=>LV[i[0].dataIndex].d,
+          label:i=>{const p=LV[i.dataIndex],r=rows[i.dataIndex];return ['시총 비율 '+p.r.toFixed(2)+'배','한진칼 '+won(r.hk)+' · '+p.hk.toFixed(2)+'조','대한항공 '+won(r.kal)+' · '+p.kal.toFixed(2)+'조'];}}}}}});
+  }
+  function paint(){[chart,daily].forEach(ch=>{if(!ch)return;const h=css('--amber'),m=css('--muted'),l=css('--line'),s=css('--surface');const d=ch.data.datasets[0];d.borderColor=h;d.pointBackgroundColor=h;d.pointBorderColor=s;
+    const sc=ch.options.scales;[sc.x,sc.y].forEach(a=>{a.ticks.color=m;a.grid.color=l;a.border={color:l};});ch.update();});}
   paint();
   const mq=window.matchMedia('(prefers-color-scheme: dark)');(mq.addEventListener?mq.addEventListener('change',paint):mq.addListener(paint));
   new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
