@@ -1,0 +1,4 @@
+# 평문 공지와 초대코드는 저장소에 올리지 않는다 (암호화된 dist/ 만 올린다)
+content.json
+codes.json
+dist/

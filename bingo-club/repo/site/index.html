@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>빙고 투자모임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 한 단 읽기 폭(680px), 상단 고정 탭, 회차 번호는 빙고 공 모양 */
+:root {
+  --bg: #f1f4f9; --surface: #ffffff; --ink: #141b2d; --muted: #5a6479;
+  --line: #d9dfea; --accent: #d3243f; --accent-ink: #ffffff; --link: #2452d6;
+  --soft: #e7ecf5; --next: #fff1f3;
+  --display: "Do Hyeon", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1422; --surface: #172033; --ink: #e9edf6; --muted: #98a3ba;
+  --line: #2a3550; --accent: #ff6278; --accent-ink: #1a0a0e; --link: #8fb0ff;
+  --soft: #202b43; --next: #2c1c28; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1422; --surface: #172033; --ink: #e9edf6; --muted: #98a3ba;
+  --line: #2a3550; --accent: #ff6278; --accent-ink: #1a0a0e; --link: #8fb0ff;
+  --soft: #202b43; --next: #2c1c28; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 16px/1.7 var(--body); word-break: keep-all; overflow-wrap: anywhere }
+a { color: var(--link) }
+h1, h2, h3, p, ul, ol { margin: 0 }
+button, input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px }
+.wrap { max-width: 680px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.ball { display: inline-grid; place-items: center; flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--soft); font: 600 0.95rem var(--mono); font-variant-numeric: tabular-nums }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.1rem; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none; cursor: pointer }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line) }
+.btn[disabled] { opacity: .6; cursor: progress }
+
+/* 잠금 화면 */
+#lock { padding-block: 12vh 3rem }
+#lock .card { max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem }
+.bingo { display: flex; gap: .5rem }
+.bingo .ball { background: var(--accent); color: var(--accent-ink); font: 1.25rem var(--display) }
+#lock h1 { font: 2.25rem/1.2 var(--display) }
+#lock p { color: var(--muted) }
+#lock form { display: flex; flex-direction: column; gap: .75rem }
+#lock label { font-size: .875rem; font-weight: 600 }
+#code { width: 100%; min-height: 3rem; padding: 0 .9rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font: 600 1rem var(--mono); letter-spacing: .04em; text-transform: uppercase }
+.keep { display: flex; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 400; color: var(--muted) }
+#err { color: var(--accent); font-size: .9rem; min-height: 1.5em }
+
+/* 본문 */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line) }
+header .wrap { display: flex; flex-direction: column; gap: .5rem; padding-block: .9rem 0 }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 1rem }
+.top h1 { font: 1.5rem/1.2 var(--display) }
+.top button { background: none; border: 0; color: var(--muted); font-size: .875rem; cursor: pointer; padding: .4rem 0 }
+nav { display: flex; gap: 1.25rem; overflow-x: auto }
+nav a { flex: none; padding: .5rem 0 .6rem; color: var(--muted); text-decoration: none; font-weight: 600; border-bottom: 3px solid transparent }
+nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent) }
+main { padding-block: 1.75rem 4rem; display: flex; flex-direction: column; gap: 2.25rem }
+section { display: flex; flex-direction: column; gap: .9rem; min-width: 0 }
+h2 { font: 1.375rem/1.3 var(--display); text-wrap: balance }
+h3 { font-size: 1rem; font-weight: 600 }
+.eyebrow { font-size: .8125rem; font-weight: 600; color: var(--accent); letter-spacing: .02em }
+.muted { color: var(--muted) }
+.prose { display: flex; flex-direction: column; gap: .7rem }
+.prose ul { padding-left: 1.2rem; display: flex; flex-direction: column; gap: .2rem }
+
+.next { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem }
+.next .head { display: flex; align-items: center; gap: .9rem }
+.next .ball { width: 3.25rem; height: 3.25rem; font-size: 1.25rem; background: var(--accent); color: var(--accent-ink) }
+.next .date { font: 1.75rem/1.2 var(--display) }
+dl { margin: 0; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: .45rem .75rem }
+dt { color: var(--muted); font-size: .875rem; padding-top: .1rem }
+dd { margin: 0 }
+.row { display: flex; flex-wrap: wrap; gap: .6rem }
+
+.notice { border-top: 1px solid var(--line); padding-top: .9rem; display: flex; flex-direction: column; gap: .35rem }
+.tl { list-style: none; padding: 0; display: flex; flex-direction: column }
+.tl li { display: grid; grid-template-columns: 7.25rem minmax(0, 1fr); gap: .75rem; padding: .55rem 0; border-top: 1px solid var(--line) }
+.tl time { font: 500 .875rem/1.9 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted) }
+.tl .break { color: var(--muted) }
+.tl .main { font-weight: 600 }
+
+.book { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: .4rem }
+.book .title { font: 2rem/1.25 var(--display); text-wrap: balance }
+
+.q { display: flex; flex-direction: column }
+.q h3 { color: var(--muted); font-size: .875rem; padding-bottom: .4rem }
+.s { display: grid; grid-template-columns: 2.5rem 4.25rem minmax(0, 1fr); gap: .75rem; align-items: center; padding: .6rem .5rem; border-top: 1px solid var(--line) }
+.s .d { font: 500 .9rem var(--mono); font-variant-numeric: tabular-nums }
+.s .d small { display: block; font: .75rem var(--body); color: var(--muted) }
+.s .w { display: flex; flex-wrap: wrap; gap: .15rem .7rem; align-items: baseline }
+.s .n { font-size: .8125rem; color: var(--muted); flex-basis: 100% }
+.s.past { opacity: .55 }
+.s.now { background: var(--next); border-radius: 8px; border-top-color: transparent }
+.s.now .ball { background: var(--accent); color: var(--accent-ink) }
+.s.now + .s { border-top-color: transparent }
+.rule { border-top: 1px solid var(--line); padding-top: 1rem; display: flex; flex-direction: column; gap: .6rem }
+</style>
+</head>
+<body>
+
+<div id="lock" class="wrap">
+  <div class="card">
+    <div class="bingo" aria-hidden="true"><span class="ball">B</span><span class="ball">I</span><span class="ball">N</span><span class="ball">G</span><span class="ball">O</span></div>
+    <h1>빙고 투자모임</h1>
+    <p>모임원 전용 공간입니다. 받으신 초대코드를 입력하면 공지와 일정을 볼 수 있어요.</p>
+    <form id="form">
+      <label for="code">초대코드</label>
+      <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="BINGO-XXXX-XXXX-XXXX" required>
+      <label class="keep" for="keep"><input type="checkbox" id="keep" checked> 이 기기에서 기억하기</label>
+      <button class="btn" id="go" type="submit">입장하기</button>
+      <div id="err" role="alert"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="wrap">
+      <div class="top"><h1 id="site"></h1><button type="button" id="out">잠그기</button></div>
+      <nav aria-label="메뉴">
+        <a href="#notice">전체공지</a><a href="#book">책공지</a><a href="#schedule">모임 일정</a><a href="#rules">운영공지</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap" id="view"></main>
+</div>
+
+<script>
+const PAYLOAD = {"v":1,"iter":600000,"slots":[{"salt":"ZX1dt6pFOAyHET5sU1CKTQ==","iv":"QpDg1oHNh3htX72o","key":"DHoOMJGGoeUwnwWLNyIjZ4k46epUeaRjvHqEgHJuX7d+wTMMTh3XEHW28DkEDVEC"}],"iv":"rDGG2x7YYWJud2AS","ct":"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"};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const store = {
+  get() { try { return localStorage.getItem('bingo-code') } catch { return null } },
+  set(v) { try { v ? localStorage.setItem('bingo-code', v) : localStorage.removeItem('bingo-code') } catch {} },
+};
+let DATA = null;
+
+async function unlock(code) {
+  const pw = new TextEncoder().encode(code.toUpperCase().replace(/[\s-]/g, ''));
+  const base = await crypto.subtle.importKey('raw', pw, 'PBKDF2', false, ['deriveKey']);
+  for (const s of PAYLOAD.slots) {
+    try {
+      const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: unb64(s.salt), iterations: PAYLOAD.iter },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const raw = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(s.iv) }, k, unb64(s.key));
+      const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(PAYLOAD.iv) }, key, unb64(PAYLOAD.ct));
+      return JSON.parse(new TextDecoder().decode(pt));
+    } catch {}
+  }
+  return null;
+}
+
+// 본문: 빈 줄 = 문단, "- " = 목록, URL 자동 링크
+function prose(text) {
+  const link = (s) => esc(s).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  return '<div class="prose">' + text.split(/\n{2,}/).map((block) => {
+    const lines = block.split('\n');
+    const items = lines.filter((l) => l.startsWith('- '));
+    const rest = lines.filter((l) => !l.startsWith('- '));
+    return (rest.length ? `<p>${rest.map(link).join('<br>')}</p>` : '') +
+      (items.length ? `<ul>${items.map((l) => `<li>${link(l.slice(2))}</li>`).join('')}</ul>` : '');
+  }).join('') + '</div>';
+}
+
+const dateOf = (s) => { const [m, d] = s.date.split('-').map(Number); return new Date(DATA.year, m - 1, d) };
+const today = () => { const t = new Date(); t.setHours(0, 0, 0, 0); return t };
+const nextSession = () => DATA.sessions.find((s) => dateOf(s) >= today());
+const md = (s) => { const d = dateOf(s); return `${d.getMonth() + 1}월 ${d.getDate()}일` };
+
+const views = {
+  notice() {
+    const m = DATA.meeting, n = nextSession();
+    return `
+    <section>
+      <div class="next">
+        ${n ? `<div class="head"><span class="ball">${n.n}</span><div><div class="eyebrow">다음 모임 · ${n.n}회</div><div class="date">${md(n)} 일요일</div></div></div>` : `<div class="date">다음 일정은 곧 공지됩니다</div>`}
+        <dl>
+          <dt>시간</dt><dd>${esc(m.cadence)} ${esc(m.start)}~${esc(m.end)}</dd>
+          ${n ? `<dt>발표</dt><dd>${n.who.length ? n.who.map(esc).join(', ') : '발표 없음'}${n.note ? ` <span class="muted">· ${esc(n.note)}</span>` : ''}</dd>` : ''}
+          <dt>장소</dt><dd>${esc(m.address)}</dd>
+        </dl>
+        <div class="row">
+          <a class="btn" href="${esc(m.telegram)}" target="_blank" rel="noopener">텔레그램 대화방 입장</a>
+          <button class="btn ghost" type="button" id="copy">주소 복사</button>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>전체공지</h2>
+      ${DATA.notices.map((x) => `<article class="notice"><h3>${esc(x.title)}</h3>${prose(x.body)}</article>`).join('')}
+    </section>
+    <section>
+      <h2>모임 타임라인</h2>
+      <p class="muted">모임 진행시간 ${esc(m.start)}~${esc(m.end)}</p>
+      <ol class="tl">${m.timeline.map((t) => `<li><time>${t.from}–${t.to}</time><span class="${t.kind}">${esc(t.label)}</span></li>`).join('')}</ol>
+    </section>`;
+  },
+  book() {
+    const b = DATA.book;
+    const more = DATA.sessions.filter((s) => s.note && /연금술/.test(s.note));
+    return `
+    <section>
+      <h2>책공지</h2>
+      <div class="book"><div class="eyebrow">${esc(b.label)}</div><div class="title">${esc(b.title)}</div><div class="muted">${esc(b.author)}</div></div>
+    </section>
+    ${more.length ? `<section><h2>올해 함께 읽은 책</h2>${more.map((s) => `<div class="notice"><h3>${esc(s.note.split(' · ').pop())}</h3><p class="muted">${s.n}회 · ${md(s)}</p></div>`).join('')}</section>` : ''}`;
+  },
+  schedule() {
+    const n = nextSession(), t = today(), qs = {};
+    DATA.sessions.forEach((s) => { const q = Math.floor(dateOf(s).getMonth() / 3) + 1; (qs[q] ||= []).push(s) });
+    return `
+    <section>
+      <h2>${DATA.year}년 모임 일정</h2>
+      <p class="muted">${esc(DATA.meeting.cadence)} ${esc(DATA.meeting.start)}~${esc(DATA.meeting.end)} · 이름은 그날 발표자입니다.</p>
+    </section>
+    ${Object.entries(qs).map(([q, list]) => `<section class="q"><h3>${q}분기</h3>${list.map((s) => `
+      <div class="s ${s === n ? 'now' : dateOf(s) < t ? 'past' : ''}">
+        <span class="ball">${s.n}</span>
+        <span class="d">${s.date.replace('-', '/')}<small>${s === n ? '다음 모임' : '일요일'}</small></span>
+        <span class="w">${s.who.map((w) => `<span>${esc(w)}</span>`).join('')}${s.note ? `<span class="n">${esc(s.note)}</span>` : ''}</span>
+      </div>`).join('')}</section>`).join('')}`;
+  },
+  rules() {
+    return `
+    <section><h2>운영공지</h2><p class="muted">${esc(DATA.rulesIntro)}</p></section>
+    <section>${DATA.rules.map((r) => `<article class="rule"><h3>${esc(r.title)}</h3>${prose(r.body)}</article>`).join('')}</section>`;
+  },
+};
+
+function route() {
+  if (!DATA) return;
+  const name = views[location.hash.slice(1)] ? location.hash.slice(1) : 'notice';
+  document.querySelectorAll('nav a').forEach((a) => a.getAttribute('href') === '#' + name ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $('view').innerHTML = views[name]();
+  window.scrollTo(0, 0);
+  const copy = $('copy');
+  if (copy) copy.onclick = () => navigator.clipboard.writeText(DATA.meeting.address)
+    .then(() => { copy.textContent = '복사됨' }, () => { copy.textContent = '길게 눌러 복사해주세요' });
+}
+
+function enter(data) {
+  DATA = data;
+  $('site').textContent = data.siteName;
+  $('lock').hidden = true; $('app').hidden = false;
+  route();
+}
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = $('code').value.trim(), go = $('go');
+  $('err').textContent = ''; go.disabled = true; go.textContent = '확인 중…';
+  const data = await unlock(code).catch(() => null);
+  go.disabled = false; go.textContent = '입장하기';
+  if (!data) { $('err').textContent = '초대코드가 맞지 않습니다. 다시 확인해주세요.'; return }
+  store.set($('keep').checked ? code : null);
+  enter(data);
+});
+$('out').addEventListener('click', () => { store.set(null); DATA = null; $('view').innerHTML = ''; $('code').value = ''; $('app').hidden = true; $('lock').hidden = false });
+addEventListener('hashchange', route);
+(async () => { const saved = store.get(); if (saved) { const d = await unlock(saved).catch(() => null); if (d) enter(d) } })();
+</script>
+</body>
+</html>
