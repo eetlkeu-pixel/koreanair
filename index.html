@@ -46,6 +46,10 @@ header{display:flex;flex-direction:column;gap:12px}
 .tape .v{font-family:var(--f-num);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .tape .v.hot{color:var(--amber)}
 .asof{font-size:12.5px;color:var(--muted)}
+.topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;background:var(--ink);color:var(--bg);border-radius:12px;padding:14px 18px}
+.topbar .tk{font-size:13px;opacity:.85}
+.topbar .tv{font-family:var(--f-num);font-size:clamp(30px,6vw,40px);font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.topbar .td{font-family:var(--f-num);font-size:14px;font-variant-numeric:tabular-nums;opacity:.9}
 section{display:flex;flex-direction:column;gap:14px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -115,6 +119,7 @@ td.l{text-align:left;white-space:normal;min-width:180px}
 
 <div class="wrap">
 <header>
+  <div class="topbar" role="status" aria-live="polite"><div style="display:flex;flex-direction:column;gap:2px"><span class="tk" id="topK">전일 종가 기준 시총 비율</span><span class="tv" id="topV">-</span></div><span class="td" id="topD">-</span></div>
   <p class="eyebrow">Hanjin KAL vs Korean Air · 매일 장 마감 후 갱신</p>
   <h1>한진칼은 대한항공의 몇 배까지 갈 수 있나</h1>
   <p class="lede">지주회사 한진칼의 시가총액을 자회사 대한항공의 시가총액으로 나눈 비율만 본다. 경영권 분쟁이 붙을 때마다 이 비율이 어디까지 올랐는지, 그리고 지금 어디에 있는지 비교한다.</p>
@@ -270,6 +275,7 @@ const LIVE=[
 {d:"2026-11-12",hk:203000,kal:31650,hkSh:66762279,kalSh:368220000,src:"한진칼·대한항공 KRX 종가(Yahoo)"},
 {d:"2026-11-13",hk:203500,kal:31550,hkSh:66762279,kalSh:368220000,src:"한진칼·대한항공 KRX 종가(Yahoo)"},
 {d:"2026-11-16",hk:215500,kal:31700,hkSh:66762279,kalSh:368220000,src:"한진칼·대한항공 KRX 종가(Yahoo)"},
+{d:"2026-11-17",hk:215500,kal:31950,hkSh:66762279,kalSh:368220000,src:"중앙이코노미뉴스·한국경제"},
 /*ROWS_END*/
 ];
 </script>
@@ -305,6 +311,11 @@ const LIVE=[
     document.getElementById('tKalCap').textContent=jo(kc);
     document.getElementById('tRatio').textContent=(hc/kc).toFixed(2)+'배';
     document.getElementById('asof').textContent='기준일 '+last.d+' · 출처 '+last.src;
+    const rt=hc/kc, prev=rows[rows.length-2];
+    document.getElementById('topK').textContent='전일 종가 기준 시총 비율 · '+last.d.replace(/-/g,'.');
+    document.getElementById('topV').textContent=rt.toFixed(2)+'배';
+    if(prev){const pr=(prev.hk*prev.hkSh)/(prev.kal*prev.kalSh);const dv=rt-pr;document.getElementById('topD').textContent='직전 기록('+prev.d.slice(5).replace('-','.')+') '+pr.toFixed(2)+'배 → '+(dv>=0?'+':'')+dv.toFixed(2);}
+    else document.getElementById('topD').textContent='';
   }
 
   // 차트
